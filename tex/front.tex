@@ -1,0 +1,74 @@
+\thispagestyle{empty}
+\begin{center}
+{\small\textsc{Antern Studies \quad$\cdot$\quad Lecture Notes}}\\[14pt]
+{\LARGE\bfseries Transformers from First Principles}\\[8pt]
+{\large From one word to designing your own model}\\[12pt]
+Ayush Singh \quad\textperiodcentered\quad Kirti Goyal\\[2pt]
+{\small October 2026}
+\end{center}
+\vspace{4pt}
+
+\section*{How to read these notes}
+
+Why does a transformer look the way it does? You could memorise the diagram. I would rather you walk the road
+the researchers walked and arrive at it yourself, one failure at a time. Every piece of the transformer
+(attention, positions, the MLP, the residual stream, normalisation, the KV cache) exists because something
+simpler broke. So in every chapter we first build the simple thing, watch it break \emph{with actual numbers},
+and only then introduce the fix. If at the end of a section you feel ``I could have invented this myself'',
+the section has done its job. Could you have invented attention in 2014, given what people knew then?
+By Chapter 3 I think you will say yes.
+
+\paragraph{Two readers at once.} These notes are written for someone who left school decades ago and for a
+PhD student, at the same time. Every idea is climbed in three rungs:
+\begin{itemize}
+\item \textsc{Picture it}: an everyday picture you can hold in your head. No symbols.
+\item \textsc{Say it exactly}: the same idea in mathematics, with every symbol defined and every shape written.
+\item \textsc{Why it had to be this way}: the general principle underneath, the part that transfers to
+problems that have nothing to do with language.
+\end{itemize}
+If a rung feels too easy, skip it. If it feels too hard, go one rung down and come back. You never need
+anything you were not given on an earlier page.
+
+\paragraph{How to use the boxes.} Each chapter opens with a \textbf{map} and a short \textbf{Before you
+start} check of the maths it needs, with a refresher right there; do it, even if it looks familiar. When you
+see \textbf{Predict first}, stop and write down a guess before reading on. A wrong guess is useful: it shows
+you exactly which idea to look at again. \textbf{Where this picture breaks} tells you the limit of an
+analogy, so the picture does not mislead you later. \textbf{A tempting wrong idea} names a mistake many
+people make, says why it feels right, and shows why it is wrong. \textbf{Check yourself} questions have
+their answers at the end of the chapter; answer first, then look. For a wrong option, the answer says which
+wrong idea it came from. \textbf{Looking back} brings back questions from earlier chapters, because recalling
+something after a gap is how it stays.
+
+Why so many questions? Because a guess you wrote down, right or wrong, is what makes the answer stick.
+
+\paragraph{Three rules hold throughout.}
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{One running problem.} We start from a real message, \tok{waste of time}, and a real job:
+reply to it well. The same tokens and the same tiny weights ($d=4$) follow us through every chapter, small
+enough to compute with a pencil. Later the same steps are replayed on real models, GPT-2 and Qwen3-0.6B.
+\item \textbf{Every number is real.} No number in these notes was typed by hand. Each one is produced by a
+script in the companion repository and cross-checked (Appendix B lists them). Where we make a claim about the
+world, such as ``counting word sequences runs out of data'', we measure it on a real corpus.
+\item \textbf{Shapes on every equation.} Most confusion about transformers is shape confusion, not idea
+confusion. Every equation carries its tensor shape in grey on the right.
+\end{enumerate}
+
+\paragraph{What you will be able to do.} By the end, without looking anything up, you should be able to
+(a) run a full forward pass of a small transformer by hand, for a whole batch of sentences;
+(b) explain, as a picture of arrows turning and stretching, what training does to every weight;
+(c) read any model's \texttt{config.json} and compute its parameter count, training cost and KV-cache memory;
+(d) design a transformer for a given compute, memory and latency budget, and defend every choice.
+
+\paragraph{Contents.}
+\begin{center}
+\small
+\begin{tabular}{@{}r@{\quad}l@{\qquad}r@{\quad}l@{}}
+0 & Notation & 7 & From scores to words: temperature, sampling\\
+1 & The problem, and 70 years of attempts & 8 & Learning: how the arrows get nudged\\
+2 & Tokens, and words as points in space & 9 & Inference: the KV cache and its bill\\
+3 & Attention: letting tokens talk & 10 & The toy scaled up: GPT-2, then Qwen3\\
+4 & Order: from sinusoids to rotations (RoPE) & 11 & Designing your own transformer\\
+5 & Many heads, the MLP, the residual stream & A & The calculus, checked numerically\\
+6 & Normalisation, and why depth is hard & B & Reproducing every number\\
+\end{tabular}
+\end{center}

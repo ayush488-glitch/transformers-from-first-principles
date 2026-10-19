@@ -1,0 +1,15 @@
+{
+ "train_words": 183152,
+ "test_words": 61963,
+ "vocab": 5409,
+ "unseen1": 2.457918435195197,
+ "unseen2": 29.02746844840386,
+ "unseen3": 68.8481464146802,
+ "unseen4": 90.59877340219496,
+ "unseen5": 97.75819493536048,
+ "count_waste_of_time": 38,
+ "train_after_waste_of": {},
+ "test_waste_of_time": 38,
+ "possible_trigrams": 158252632929,
+ "seen_trigrams": 131165
+}

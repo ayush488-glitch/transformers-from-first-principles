@@ -1,0 +1,50 @@
+[
+ {
+  "id": "10.1",
+  "wrong": "A bigger width, more heads or more layers is always better.",
+  "tempting": "Bigger models score better on leaderboards.",
+  "fixed_in": "10.4, 10.6",
+  "week": 9,
+  "quote": "it is not that the more the number is the better it is"
+ },
+ {
+  "id": "10.2",
+  "wrong": "More attention heads always help.",
+  "tempting": "Each head is one more way of looking.",
+  "fixed_in": "10.3",
+  "week": 9,
+  "quote": "it is not always it helps"
+ },
+ {
+  "id": "10.3",
+  "wrong": "The embedding table has exactly one row per tokenizer entry.",
+  "tempting": "Each token needs one row, so the counts should match.",
+  "fixed_in": "10.2",
+  "week": 9,
+  "quote": "they have around 151,669 address"
+ },
+ {
+  "id": "10.4",
+  "wrong": "Most of a transformer's parameters sit in attention.",
+  "tempting": "Attention is the famous part.",
+  "fixed_in": "10.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "10.5",
+  "wrong": "A model with billions of weights will overfit.",
+  "tempting": "In classic machine learning more parameters than examples meant overfitting.",
+  "fixed_in": "10.5",
+  "week": 9,
+  "quote": "billions of weights means too much"
+ },
+ {
+  "id": "10.6",
+  "wrong": "Number of heads times head width must equal the model width.",
+  "tempting": "It does in the original transformer and in GPT-2.",
+  "fixed_in": "10.3",
+  "week": null,
+  "quote": null
+ }
+]

@@ -1,0 +1,600 @@
+\newpage
+\section*{1\quad The problem, and seventy years of attempts}
+\addcontentsline{toc}{section}{1 The problem}
+\startchapter{1}
+
+\begin{chaptermap}
+\emph{The problem:} a customer writes \tok{waste of time}, and we want a machine to write a good reply.
+\emph{The steps:} three ways to automate the reply, and why writing it one word at a time wins (\S1.1--1.2);
+then seventy years of attempts at the one function that needs, each with the failure that pushed the next
+one (\S1.3--1.7); then a real case (\S1.8) and the whole machine at a glance (\S1.9).
+\emph{Where it ends:} with four requirements that the transformer was built to meet, and a picture of how
+one pass handles a whole batch of sentences.
+\end{chaptermap}
+
+\begin{beforeyoustart}
+Five quick questions. Answer each, then read the refresher under it.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.6em]
+\item A bag holds 3 red counters and 1 blue counter. You pick one without looking. What is the chance it is red?\\
+\emph{Refresher:} a probability is ``favourable cases divided by all cases'', always between 0 and 1. Here
+$3/4 = \nOneRed$.
+\item You toss a fair coin twice. What is the chance of two heads?\\
+\emph{Refresher:} for two separate events, ``this and then that'' means multiply: $\tfrac12\times\tfrac12=\nOneTwoHeads$.
+\item What is $0.9\times0.9\times0.9$?\\
+\emph{Refresher:} multiplying a number by itself is written as a power: $0.9^3 = \nOneCube$. A number below 1
+gets smaller every time you multiply by it.
+\item A friend's calculation says the chance of rain tomorrow is 1.2. What went wrong?\\
+\emph{Refresher:} nothing can be more certain than certain (1) or less than impossible (0). Any probability
+outside 0 to 1 means a mistake earlier in the working: a good thing to notice, because it tells you where to look.
+\item What is 30\% of 200?\\
+\emph{Refresher:} ``per cent'' means ``out of 100'', so 30\% of 200 is $0.30\times200=\nOnePct$.
+\end{enumerate}
+\end{beforeyoustart}
+
+Before any architecture, we need a problem. Nobody wakes up wanting a transformer. We want something done,
+and the transformer is what fell out after many people tried many simpler things. So let us start where they
+started: with a job.
+
+%---------------------------------------------------------------------
+\subsection*{1.1\quad A real job}
+
+A software company sends every customer a message after a support chat: \emph{How was your experience?}
+Thousands of answers come back every day. Most say \emph{thanks}. Some say \emph{great}. And some say
+\begin{center}\tok{waste of time}\end{center}
+What should the company say back? Tell me: if you were the support agent, what would you write?
+
+A good agent writes something like \emph{Sorry, this has not been useful}, and does not argue, does not paste a
+refund policy, and does not reply ``Glad we could help!''. Our job: get a machine to write that reply.
+
+How did you, the human, do it? You read the whole message. You noticed that \tok{waste} turns \tok{time} into a
+complaint. You wrote the reply one word after another, each word fitting the words before it. Keep those three
+things in mind: \emph{read everything}, \emph{notice which words change the meaning of which}, \emph{write one
+word at a time}. The whole transformer is a machine for doing these three things.
+
+\Summary{Our running problem is to reply well to \tok{waste of time}, which needs reading everything, noticing
+which words change which, and writing one word at a time.}
+
+%---------------------------------------------------------------------
+\subsection*{1.2\quad Three ways to automate the reply}
+
+\paragraph{Attempt 1: rules.} \emph{If the message contains ``waste of time'', reply with an apology.}
+Will this survive a week? On Monday it works. On Tuesday someone writes \emph{total waste}, \emph{useless},
+\emph{not worth my evening}, and the rule misses all three. On Wednesday someone writes \emph{not a waste of
+time at all, loved it!} and the rule apologises to a happy customer. Rules break because language has endlessly
+many ways to say the same thing, and small words like \emph{not} flip the meaning of everything around them.
+
+\paragraph{Attempt 2: pick a reply from a list.} Write ten good replies and train a model to choose one
+(``apology'', ``thanks'', ``escalate'', \ldots). This learns from examples instead of rules, which is better.
+But what happens with the eleventh situation, a customer who is angry \emph{and} asks a question? There is no
+reply for it in the list. The model can only pick from what we imagined in advance.
+
+\paragraph{Attempt 3: write the reply, one word at a time.} Instead of choosing a finished reply, the machine
+builds one. And here is the trick: \emph{writing a reply is guessing the next word, over and over.}
+
+\Picture When a teacher says ``Twinkle, twinkle, little \rule{1.2em}{0.4pt}'', a room of children says
+\emph{star}. They are not reciting a rule. They have heard so much language that, given the words so far, one
+word is far more likely than all others. Play that game again on \emph{Twinkle, twinkle, little star, how I
+\rule{1.2em}{0.4pt}}, and again, and again, and a whole verse comes out, one guess at a time.
+
+\begin{breaks}
+The children answer with one word. The model answers with a probability for \emph{every} word it knows, and
+something else (Chapter 7) picks one. The children also know what a star is; the model has only ever seen text.
+\end{breaks}
+
+\Exactly Let a piece of text be a sequence of tokens $w_1, w_2, \ldots, w_T$ (for now, a token is a word;
+Chapter 2 refines this). The \emph{chain rule of probability}, which is ``first this, then that given this'',
+says
+\[
+P(w_1, w_2, \ldots, w_T) \;=\; P(w_1)\,P(w_2\mid w_1)\,P(w_3\mid w_1,w_2)\cdots P(w_T\mid w_1,\ldots,w_{T-1})
+\;=\; \prod_{t=1}^{T} P(w_t \mid w_{<t}).
+\]
+In words: the chance of the whole text is the chance of the first word, times the chance of the second word
+given the first, and so on. It is the coin question from \emph{Before you start}, with each step allowed to
+depend on the earlier ones. So if a machine answers one question well (\emph{given the words so far, how
+likely is each possible next word?}), it can write anything. Our reply
+\[
+\underbrace{\tok{waste of time}}_{\text{given}} \;\to\; \tok{Sorry} \;\to\; \tok{,} \;\to\; \tok{this}
+\;\to\; \tok{has} \;\to\; \tok{not} \;\to\; \tok{been} \;\to\; \tok{useful}
+\]
+is seven guesses, each made with everything to its left in view. Figure~\ref{fig:loop} shows the loop.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[font=\small, box/.style={draw, rounded corners=2pt, inner sep=5pt, align=center}]
+\node[box] (ctx) {words so far\\\tok{waste of time Sorry ,}};
+\node[box, right=1.1cm of ctx] (model) {the model};
+\node[box, right=1.1cm of model] (prob) {a probability for\\every word it knows\\[2pt]
+\footnotesize \tok{this}: high,\ \tok{we}: lower,\ \ldots};
+\node[box, below=0.7cm of model] (pick) {pick one: \tok{this}};
+\draw[-{Stealth}] (ctx) -- (model);
+\draw[-{Stealth}] (model) -- (prob);
+\draw[-{Stealth}] (prob) |- (pick);
+\draw[-{Stealth}] (pick) -| node[pos=0.75, left, font=\footnotesize]{append, repeat} (ctx);
+\end{tikzpicture}
+\caption{Writing as repeated guessing. Chapter 7 shows how the probabilities are computed. Everything in
+Chapters 2--6 lives inside the box called ``the model''.}
+\label{fig:loop}
+\end{figure}
+
+\Predict Let's assume each of the seven guesses is right with probability 0.9, and that one wrong word spoils
+the reply. Before computing: is the chance that the whole reply comes out right closer to 90\%, 70\% or 50\%?
+
+The chain rule says multiply: $0.9^7 = \nOneSevenRight$, about \nOneSevenPct\%. For a 20-word reply it would be
+$0.9^{20}=\nOneTwentyRight$.
+\Sanity Every factor is below 1, so the product must fall as the reply grows, and it does.
+
+\Why Two consequences fall straight out of this loop, and you should hold on to both.
+\begin{enumerate}[label=(\roman*)]
+\item \emph{Every word is written in the light of all earlier words, including the model's own.} If one guess
+goes wrong, every later guess builds on the mistake, and the worked example shows how fast that adds up. A large
+part of what people call \emph{hallucination} comes from here.
+\item \emph{The problem labels itself.} Any text is already a pile of solved exercises: hide the next word, and
+the text itself is the answer key. A corpus of \cTrainWords\ words of transcribed talks is \cTrainWords\ such
+exercises, minus one, and nobody had to label a single one.
+\end{enumerate}
+
+\begin{wrongidea}{1.3}
+\emph{Hallucination is a bug someone forgot to fix.} It is tempting because software errors usually are bugs.
+But look at consequence (i): the same loop that lets the model write a fluent reply to a message it has never
+seen also lets one wrong guess carry the rest of the reply with it. Hallucination is a consequence of the process, not a
+separate fault sitting in the code. Systems built on these models reduce it with
+checks around the model; they do not delete a line of code.
+\end{wrongidea}
+
+\begin{wrongidea}{1.4}
+\emph{Training data needs a human to label every example.} Every model you may have built before (a churn
+model, a fraud model, a release-triage model) needed a labelled $X$ and $Y$, so this feels like a law. For the
+next-word game the label is the next word, already sitting in the text. Attempt 2 needed people to label
+replies; Attempt 3 needs only text.
+\end{wrongidea}
+
+\begin{wrongidea}{1.1}
+\emph{Next-word prediction is shallow autocomplete, so it cannot involve understanding.} Phone keyboards also
+predict the next word, and they are not clever, so the comparison is natural. But ask what it takes to guess
+the next word \emph{well} after \tok{waste of time}: you need to know it is a complaint, who is speaking, and
+what a polite company says. The game is simple to state and hard to play; the better a model plays it, the more
+it has to capture about the world the text describes.
+\end{wrongidea}
+
+\begin{wrongidea}{1.2}
+\emph{When a model says ``I am 90\% sure'', that is a calibrated probability.} It looks like one, and the
+model does compute probabilities inside. But those are probabilities of \emph{next tokens}. The words ``90\%
+sure'' are themselves next tokens, chosen because they fit the text, not a measurement of how often the model
+is right. Calibrated confidence has to be measured from outside, by checking many answers. Chapter 7 returns
+to this.
+\end{wrongidea}
+
+\begin{checkq}
+A model writes a 10-word reply, and each word is right with probability 0.95. Which statement is true?
+\begin{options}
+\item The reply is right with probability 0.95, because each word is.
+\item The reply is right with probability $0.95^{10}$, which is less than 0.95.
+\item If the reply is wrong, the cause is a bug in the code.
+\item The model's reply ``I am 95\% sure'' would tell us the same number.
+\end{options}
+\end{checkq}
+
+\begin{principle}{turn the task into a game the data already plays}
+The strongest move in machine learning is often not a better model but a better question. ``Choose a reply
+from my list'' needs labelled data and caps the system at what you imagined. ``Guess the next word'' needs no
+labels and caps nothing: translation (\emph{English: waste of time. French:}), classification
+(\emph{Review: waste of time. Sentiment:}) and question answering all become ``continue the text''. When you
+design an AI system (an agent, a memory layer, an evaluator), ask first: what question can my data answer by
+itself?
+\end{principle}
+
+So the problem is fixed for the rest of these notes:
+\begin{center}
+\emph{Build a function that reads $w_1,\ldots,w_{t-1}$ and returns $P(w_t = w \mid w_1,\ldots,w_{t-1})$
+for every word $w$ in the vocabulary.}
+\end{center}
+
+\Summary{Writing is repeated next-word guessing, which turns every text into free, self-labelled practice,
+and also lets an early mistake carry forward.}
+
+%---------------------------------------------------------------------
+\subsection*{1.3\quad Attempt: count what came next (1948 onwards)}
+
+\Picture Keep a giant notebook. Every time you read two words, write down the word that came after them. To
+guess what follows \emph{waste of}, open the notebook at the page \emph{waste of} and pick whatever was written
+there most often.
+
+\begin{breaks}
+A real notebook has a page for every pair you might meet. This one only has pages for pairs it has already
+read, and, as we are about to measure, that is a tiny fraction of the pairs that exist.
+\end{breaks}
+
+\Exactly This is the \emph{$n$-gram model}. Claude Shannon introduced the idea in 1948, generating
+English-like text from counts of letter and word sequences, and in 1951 he measured how well \emph{people}
+play the next-letter game. From the 1970s, speech-recognition groups, notably Frederick Jelinek's at IBM, built
+practical systems on word trigrams:
+\[
+P(w_t \mid w_{t-2}, w_{t-1}) \;\approx\; \frac{\text{count}(w_{t-2}, w_{t-1}, w_t)}{\text{count}(w_{t-2}, w_{t-1})}.
+\]
+In words: of all the times you saw the two previous words, in what fraction did this word come next?
+
+\Predict Take a corpus of transcribed technical talks on AI engineering (about 245,000 words), split into nine
+parts. Use parts 1--8 (\cTrainWords\ words, \cVocab\ distinct words) as the notebook, and part 9
+(\cTestWords\ words) as new text. Before looking at the figure: what fraction of the three-word sequences in
+part 9 do you think never appear in parts 1--8? A tenth? A
+quarter? Half? Write your guess down.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, width=9cm, height=4.6cm, bar width=18pt, ymin=0, ymax=110,
+  xtick={1,2,3,4,5}, xticklabels={1 word,2 words,3 words,4 words,5 words},
+  ylabel={\% never seen before}, ylabel style={font=\small}, tick label style={font=\small},
+  nodes near coords, nodes near coords style={font=\footnotesize}, axis lines*=left,
+  enlarge x limits=0.15]
+\edef\tmp{\noexpand\addplot[fill=black!55, draw=none] coordinates {\cBars};}\tmp
+\end{axis}
+\end{tikzpicture}
+\caption{Sparsity, measured. Sequences in part 9 that never occur in parts 1--8. Single words are
+almost always known; by three words, \cUnseenThree\% are new.}
+\end{figure}
+
+Single words are almost always known (\cUnseenOne\% unseen). But \cUnseenThree\% of three-word sequences, and
+\cUnseenFive\% of five-word sequences, were never seen. And our running phrase? In parts 1--8 the
+page \emph{waste of} is completely blank: it occurs \cWasteOfTrain\ times. In part 9 the phrase
+\tok{waste of time} occurs \cWasteOfTimeTest\ times. A counting model built from \cTrainWords\ words has nothing
+to say about it.
+
+\Sanity Why so empty? With \cVocab\ words there are about \cPossibleTriBillions\ billion possible three-word
+sequences; the notebook has seen \cSeenTri\ of them, that is \cTriCoverage\% of the space. More text helps, but
+the space grows as $V^n$, much faster than any library.
+
+\Why Clever patches (smoothing, such as Kneser and Ney, 1995) move a little probability onto unseen pages, but
+they cannot fix the real problem: \emph{to a counter, every word is a name and nothing more}. Having seen
+\emph{waste of money} a thousand times tells it nothing about \emph{waste of time}, because it has no idea that
+\emph{money} and \emph{time} are alike.
+
+\begin{wrongidea}{1.5}
+\emph{A language model looks up sentences it has already seen.} It was trained on a huge amount of text, so
+storing and retrieving sounds plausible. The figure says otherwise: even inside talks on one
+topic, most three-word sequences in a new part were never seen before. A model that only looked things up
+would be silent most of the time. Whatever a useful model does, it has to work on text it has never seen.
+\end{wrongidea}
+
+\begin{wrongidea}{1.8}
+\emph{A counting model knows that \emph{time} and \emph{money} are alike.} You know it, and the model has seen
+both words many times, so it feels like it should. But the notebook stores counts of exact sequences. Nothing in
+it connects the page \emph{waste of money} to the page \emph{waste of time}. That connection is what \S1.5 adds.
+\end{wrongidea}
+
+\begin{checkq}
+A three-word counting model is built from parts 1--8 and is given \tok{waste of}. What does it predict next?
+\begin{options}
+\item \tok{time}, because \tok{waste of time} is a common English phrase.
+\item Nothing: \tok{waste of} never occurs in those parts, so the count is zero.
+\item \tok{time}, because it has seen \tok{waste of money} and knows \emph{money} and \emph{time} are alike.
+\item \tok{time}, because \tok{waste of time} occurs \cWasteOfTimeTest\ times in part 9.
+\end{options}
+\end{checkq}
+
+\begin{sidebar}
+\textbf{Requirement 1.} Words must have a notion of \emph{similarity}, so that what is learned about one word
+transfers to similar words.
+\end{sidebar}
+
+\Summary{Counting what came next fails because almost every sequence is new, and a counter cannot transfer
+what it knows to similar words.}
+
+%---------------------------------------------------------------------
+\subsection*{1.4\quad Attempt: forget the order, count the words}
+
+A tempting shortcut, long used in search engines and spam filters: throw the words into a bag and only count
+them. A bag of \emph{waste}, \emph{of}, \emph{time} is never sparse.
+
+\Predict Do these two customer replies give the same bag of words?
+\begin{center}
+\tok{not useful, very good} \qquad and \qquad \tok{very useful, not good}
+\end{center}
+They contain exactly the same words the same number of times, so their bags are identical (our script checks
+this). They mean opposite things. Order is not decoration; it carries meaning.
+
+\begin{wrongidea}{1.6}
+\emph{If the right words are present, their order hardly matters.} Keyword search works well in daily life, so
+this is easy to believe. The pair above has the right words and the opposite meaning. Order matters most for
+exactly the small words, like \emph{not}, that the rules of \S1.2 tripped on.
+\end{wrongidea}
+
+\begin{checkq}
+Which pair of replies would a bag-of-words model treat as identical?
+\begin{options}
+\item \tok{good, not cheap} and \tok{cheap, not good}
+\item \tok{waste of time} and \tok{waste of money}
+\item \tok{not useful} and \tok{useless}
+\item None: a bag of words keeps the order of the first and last word.
+\end{options}
+\end{checkq}
+
+\begin{sidebar}
+\textbf{Requirement 2.} The model must know \emph{which word came where}.
+\end{sidebar}
+
+\Summary{Counting words without their order removes sparsity but also removes meaning, so order must be kept.}
+
+%---------------------------------------------------------------------
+\subsection*{1.5\quad Attempt: words as points in space (2003, 2013)}
+
+\Picture Imagine a map of a city where every word lives at an address. \emph{Time} lives next door to
+\emph{money} and \emph{effort} (things you can waste); \emph{star} lives across town. If you learn something
+about one house, you have learned a little about its neighbours.
+
+\begin{breaks}
+A city map has two directions. Real word maps have hundreds, so a word can be near \emph{money} in one
+direction (things you spend) and near \emph{clock} in another (things you measure). No flat map can show that.
+\end{breaks}
+
+\Exactly In the counting model, each word is effectively a \emph{one-hot} vector: a list of $V$ numbers, all zero
+except a single 1 at the word's own position. Any two different one-hot vectors are exactly the same distance
+apart ($\sqrt2 \approx \hOneHotDist$), so every word is an equal stranger to every other. Bengio and colleagues
+(2003) replaced this with a short learned vector of $d$ numbers per word, an \emph{embedding}, and trained a
+small neural network to predict the next word from the embeddings of the previous few. Because similar words
+end up with similar vectors, knowledge spreads between them. Mikolov and colleagues' \emph{word2vec} (2013) made
+such vectors cheap to learn from billions of words.
+
+\Why This meets Requirement 1, and it gives us the most important idea in these notes: \emph{a word is an arrow
+in space, and meaning is direction.} Chapter 2 builds it properly; Chapter 3 uses it on every page. But
+Bengio's model still looked at a fixed window of the last few words. What about the word fifty words back?
+
+\Summary{Giving each word a learned position in space lets knowledge spread between similar words, but a fixed
+window still cannot reach far back.}
+
+%---------------------------------------------------------------------
+\subsection*{1.6\quad Attempt: read word by word, keep a running summary (1990 to 2014)}
+
+\Picture Read a story one word at a time, and after each word update a single sticky note that summarises
+everything so far. To guess the next word, look only at the sticky note.
+
+\begin{breaks}
+A person can reread the story; this reader cannot. Once a detail is rubbed off the note, it is gone.
+\end{breaks}
+
+\Exactly This is the \emph{recurrent neural network} (RNN; Elman, 1990; used as a language model by Mikolov and
+colleagues, 2010). It keeps a hidden state $\bm{h}_t$ and updates it with each new word:
+\[
+\bm{h}_t = f(\bm{h}_{t-1}, \bm{x}_t), \qquad P(w_{t+1}\mid w_{\le t}) = g(\bm{h}_t).
+\]
+It meets Requirement 2 for free, since the note is written in reading order, and in principle it can remember
+forever. In practice it breaks in three ways.
+
+\paragraph{Break (i): one sticky note.} Whatever the sentence (three words or three thousand), it must fit into
+the same fixed-size $\bm{h}_t$. Detail is squeezed out.
+
+\paragraph{Break (ii): memories fade or explode.}
+\Predict Take a single number carried on the note, and let's assume each update multiplies it by 0.9. How much
+of it is left after 50 words? More or less than a quarter?
+
+After 10 words \hFadeTen\ of it is left, after 50 words \hFadeFifty, after 100 words $\hFadeHundred$. If the
+factor is 1.1, it grows to \hGrowTen, then \hGrowFifty, then $\hGrowHundred$. Real networks multiply by
+matrices, not numbers, but the effect is the same, and it hits learning as hard as remembering: the signal that
+should teach the network ``the word fifty steps back mattered'' has to travel back through the same fifty
+multiplications (Bengio, Simard and Frasconi, 1994). The LSTM (Hochreiter and Schmidhuber, 1997) added
+\emph{gates}, learned switches that let the note keep some numbers untouched, which eased this a lot but did not
+remove breaks (i) or (iii).
+
+\paragraph{Break (iii): it cannot be done in parallel.} You cannot write note 1000 before note 999, and you
+cannot write 999 before 998. A sentence of \hT\ tokens is \hT\ steps that must happen one after another. A GPU
+is a machine with thousands of small workers; give it a chain like this and almost all of them wait.
+
+\begin{sidebar}
+\textbf{Requirement 3.} Any word must be able to reach any earlier word \emph{directly}, not through a chain of
+summaries.\\
+\textbf{Requirement 4.} The work for all positions must be doable \emph{at the same time}.
+\end{sidebar}
+
+\begin{checkq}
+An RNN carries a signal that is multiplied by 0.9 at every word. Which statement is true?
+\begin{options}
+\item After 50 words, the signal is about half its size.
+\item After 50 words, less than 1\% of the signal is left, and the lesson ``this early word mattered'' fades the same way.
+\item An LSTM's gates make the RNN process all words at the same time.
+\item The fading only affects remembering, not learning.
+\end{options}
+\end{checkq}
+
+\Summary{An RNN reads in order, but squeezes everything into one note, lets old signals fade, and cannot work on
+all positions at once.}
+
+%---------------------------------------------------------------------
+\subsection*{1.7\quad The turn: let the reader look back (2014 to 2017)}
+
+In 2014, neural translation systems (Sutskever, Vinyals and Le; Cho and colleagues) read an English sentence
+with one RNN into a single vector and wrote the French with another. Break (i) was plain to see: long sentences
+came out worse. Bahdanau, Cho and Bengio (2014) proposed a fix: when writing each French word, let the writer
+\emph{look back at every English word} and decide how much each one matters right now. They called these weights
+\emph{attention}. Requirement 3 was met. But there was still an RNN underneath, so Requirement 4 was not.
+
+In 2017, Vaswani and colleagues asked: \emph{what if attention is all you need?} Drop the RNN entirely. Let every
+word look at every earlier word directly, and do it for all words at once. Figure~\ref{fig:rnn-vs-attn} shows
+the difference. Their base translation model trained in about twelve hours on eight GPUs. That architecture is
+the \emph{transformer}; GPT (2018), GPT-2 (2019) and every model in Chapter 10 are transformers trained on the
+next-word game of \S1.2.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[font=\small, w/.style={draw, circle, minimum size=0.8cm, inner sep=0pt, line width=0.7pt}, x=1.2cm]
+\begin{scope}
+\foreach \i/\t in {1/w_1,2/w_2,3/w_3,4/w_4,5/w_5} \node[w] (r\i) at (1.15*\i,0) {$\t$};
+\foreach \i [evaluate=\i as \j using int(\i+1)] in {1,...,4} \draw[-{Stealth}] (r\i) -- (r\j);
+\node[align=center] at (3.45,-1.05) {RNN: $w_5$ reaches $w_1$ through 4 hops;\\5 steps, one after another};
+\end{scope}
+\begin{scope}[xshift=7.6cm]
+\foreach \i/\t in {1/w_1,2/w_2,3/w_3,4/w_4,5/w_5} \node[w] (a\i) at (1.15*\i,0) {$\t$};
+\foreach \i in {1,...,4} \foreach \j in {2,...,5} {
+  \ifnum\i<\j \draw[-{Stealth}, black!70, line width=0.6pt] (a\j) to[bend right=40] (a\i); \fi }
+\node[align=center] at (3.45,-1.05) {Attention: every word reaches every earlier\\word in 1 hop; all pairs computed at once};
+\end{scope}
+\end{tikzpicture}
+\caption{The two shapes of computation. For a sentence of \hT\ tokens, the RNN needs \hT\ dependent steps and
+\hHops\ hops from last to first; attention computes all \hTT\ pairings in one parallel step and connects any two
+words in one hop.}
+\label{fig:rnn-vs-attn}
+\end{figure}
+
+\begin{wrongidea}{1.7}
+\emph{Transformers replaced RNNs mainly because they are more accurate.} Better results are the headline of
+every paper, so this is the natural reading. Look at the two breaks the transformer removed: the long chain
+between distant words (Requirement 3) and the one-step-at-a-time work (Requirement 4). The second one decided
+the history: a model that uses every GPU worker at once can be trained on far more text in the same time, and
+the accuracy followed from the scale.
+\end{wrongidea}
+
+\begin{center}
+\small
+\begin{tabular}{@{}l l l@{}}
+\toprule
+Attempt & What it fixed & Where it broke \\
+\midrule
+Rules & nothing to learn & endless paraphrases, negation\\
+$n$-gram counting (1948 on) & learns from text, no labels & \cUnseenThree\% of 3-word sequences unseen\\
+Bag of words & no sparsity & order lost: opposite meanings, same bag\\
+Embeddings (2003, 2013) & similarity between words & fixed window of recent words\\
+RNN, LSTM (1990, 1997) & order; unlimited history in principle & one note; fading; strictly sequential\\
+RNN + attention (2014) & direct look-back & still sequential underneath\\
+Transformer (2017) & direct look-back, all at once & \emph{order is lost again}: see \S3.11\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\Summary{Attention gave every word a direct line to every earlier word, and dropping the RNN let all of that run
+at once, which is what made training at scale possible.}
+
+%---------------------------------------------------------------------
+\subsection*{1.8\quad A real case: Google Translate, 2016}
+
+For a decade, Google Translate worked phrase by phrase: cut the sentence into short chunks, look each chunk up in
+a huge table of translations counted from text, then glue and reorder the pieces. That is the counting notebook
+of \S1.3, applied to translation, and it had the same weakness: anything outside a chunk was invisible, so whole
+sentences came out stiff. In 2016 Google replaced it with a neural system (Wu and colleagues, 2016): LSTMs that
+read the whole sentence, with attention letting the writer look back at every source word. That is \S1.6 plus
+\S1.7, about a year before the transformer. A year later the transformer paper reported better translation
+quality than such systems at a fraction of the training cost.
+
+Tell me: which of the four requirements does each step in this story meet? The phrase table meets none of 1, 3
+and 4. The 2016 system meets 1, 2 and 3. The transformer meets 1, 3 and 4, and loses 2 for a while (Chapter 4).
+
+\Summary{A product used by millions went through the same sequence of fixes as these notes, for the same
+reasons.}
+
+%---------------------------------------------------------------------
+\subsection*{1.9\quad The whole machine at a glance}
+
+Before we open the box, here is the whole forward pass, the route every batch of text takes from characters to
+probabilities. Do not try to understand each stage yet; look at the shape of the road.
+
+\Picture An assembly line. Sentences come in at one end as text. They are cut into pieces (tokens), each piece
+gets its starting arrow (embedding), and then the arrows pass through a row of identical workstations. At each
+station two things happen: the tokens \emph{talk to each other} (attention), then each token \emph{thinks on its
+own} about what it heard (the MLP). At the end of the line, every token's arrow is turned into a guess about the
+word that comes after it.
+
+\begin{breaks}
+On an assembly line each item passes each station once and the stations never look back. Here every station
+sees all the tokens of a sentence together, and what one token becomes depends on the others.
+\end{breaks}
+
+\paragraph{Drawing the transformer, block by block.} Here is the whole machine as a frame of empty blocks.
+Every chapter from now on fills in one or two of them, and opens with this same picture, so you always know
+where you are: solid blocks are built, the highlighted block is the one that chapter builds, and dashed blocks
+are still ahead. For now only the top is filled in: text comes in.
+
+\machine{1}{The frame we will fill. Text enters at the top; each dashed block is one chapter's job. The middle
+part, inside the large rounded box, is one \emph{layer}; a real model stacks $L$ of them. At the bottom, the
+model gives a score to every word it knows, of shape $B\times T\times V$: a guess at \emph{every} position of
+\emph{every} sentence in one pass, not only at the last one.}
+
+\begin{center}\input{fig_ch1_batch.tex}\end{center}
+
+Look at the two tables above. That is the quiet reason transformers train so fast. A sentence of $T$ tokens is not one exercise
+but $T$ exercises: after \tok{waste}, guess \tok{of}; after \tok{waste of}, guess \tok{time}; after \tok{waste
+of time}, guess \tok{Sorry}. The transformer answers all of them in the same pass, for all $B$ sentences in the
+batch. How can it do that without cheating, without the guess for position 2 peeking at the answer in position
+3? That is one of the things Chapter 3 has to explain.
+
+\begin{checkq}
+A batch holds $B=8$ sentences of $T=16$ tokens each. How many next-word guesses does one forward pass produce?
+\begin{options}
+\item 8, one per sentence.
+\item 16, one per position.
+\item 128, one per position of every sentence.
+\item It depends on how long the reply is.
+\end{options}
+\end{checkq}
+
+\Summary{One pass turns $B$ sentences of $T$ tokens into $B\times T$ next-word guesses, through tokens,
+embeddings, $L$ talk-then-think stations and a final scoring step.}
+
+%---------------------------------------------------------------------
+\begin{lookingback}
+These look back at Chapter 0, the notation page.
+(1) What do $B$, $T$ and $d$ stand for, in words? (2) A matrix has shape $3\times4$. How many rows does it have,
+and what does each row hold in these notes? (3) Which symbol will stand for the number of learned parameters?
+\end{lookingback}
+
+\subsection*{Exercises}
+
+\begin{exercise}
+A notebook model looks at the previous 4 words, and the vocabulary has 50{,}000 words. How many pages could the
+notebook have? Is that more or less than the number of words ever written?
+\end{exercise}
+
+\begin{exercise}
+Using the bag-of-words idea, find two more replies a support team might receive that have identical bags but
+opposite meanings.
+\end{exercise}
+
+\begin{exercise}
+An RNN multiplies a signal by 0.95 per word. After how many words is less than 1\% of it left?
+\end{exercise}
+
+\begin{exercise}
+Write the chain rule for the reply \tok{Sorry , this has not been useful} given \tok{waste of time}: how many
+factors are there, and what does the third factor condition on?
+\end{exercise}
+
+\subsection*{Answers to Chapter 1}
+\small
+\textbf{Check yourself 1.1.} (b). A chain of guesses multiplies, so the whole is less likely than each part:
+$0.95^{10}\approx\nOneTenRight$. (a) treats the whole reply as one guess. (c) is the wrong idea M1.3: wrong words come
+from the guessing process itself. (d) is M1.2: ``I am 95\% sure'' is more text, not a measurement.
+
+\textbf{Check yourself 1.2.} (b). The page \emph{waste of} is blank: \cWasteOfTrain\ occurrences. (a) is M1.5:
+the model does not look things up in ``English''; it only has its notebook. (c) is M1.8: counts do not know
+which words are alike. (d) uses data the model never trained on, the same leakage your fraud model must avoid.
+
+\textbf{Check yourself 1.3.} (a). Same words, same counts, opposite meanings. (b) differ in one word. (c) have
+different words. (d) is M1.6 in disguise: a bag keeps no order at all.
+
+\textbf{Check yourself 1.4.} (b). $0.9^{50}=\hFadeFifty$. (a) underestimates how fast repeated multiplication
+shrinks a number. (c) is wrong: gates help memory, not parallelism (M1.7 is the belief that accuracy, not
+parallelism, was the deciding issue). (d) misses that learning signals travel back through the same steps.
+
+\textbf{Check yourself 1.5.} (c). $8\times16=128$: every position of every sentence predicts its next token. (a)
+and (b) count one dimension only. (d) confuses training on given text with writing a new reply.
+
+\textbf{Looking back.} (1) Batch size, tokens per sentence, numbers per token. (2) Three rows, one per token.
+(3) $N$.
+
+\textbf{Exercise 1.1.} $50{,}000^4 = \hExPages$ possible four-word contexts; far more than all words ever
+written, so almost every page stays empty.
+
+\textbf{Exercise 1.2.} For example \tok{good, not cheap} (good but expensive) versus \tok{cheap, not good}.
+
+\textbf{Exercise 1.3.} We need $0.95^n < 0.01$, that is $n > \ln 0.01/\ln 0.95 \approx \hExN$, so after
+\hExNceil\ words.
+
+\textbf{Exercise 1.4.} Seven factors, one per reply token. The third is $P(\tok{this}\mid\tok{waste of time Sorry ,})$:
+it conditions on the message and the two reply tokens before it.
+\normalsize
+
+\subsection*{What you now know}
+\begin{itemize}
+\item Why writing a reply one word at a time beats rules and fixed reply lists, and why that game labels itself.
+\item How the chain rule turns a sentence into a product of next-word probabilities, and why errors compound.
+\item Why counting, bag of words, word vectors, RNNs and RNN-plus-attention each fell short, measured where
+possible, and the four requirements those failures left behind.
+\item The shape of the whole forward pass, and why one pass gives $B\times T$ guesses.
+\end{itemize}

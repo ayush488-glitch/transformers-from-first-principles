@@ -1,0 +1,50 @@
+[
+ {
+  "id": "7.1",
+  "wrong": "The model can write any word, even one it has never seen.",
+  "tempting": "It writes new sentences all the time.",
+  "fixed_in": "\\S7.1",
+  "week": 9,
+  "quote": "do you really think my output token can be different from what is up in the embedding table of quen? nope."
+ },
+ {
+  "id": "7.2",
+  "wrong": "The probability the model gives is how sure it is that the answer is true.",
+  "tempting": "It is a number between 0 and 1 that sounds like confidence.",
+  "fixed_in": "\\S7.6",
+  "week": 8,
+  "quote": "that is not calibrated. that is next token prediction after all"
+ },
+ {
+  "id": "7.3",
+  "wrong": "Turning the temperature down makes the model more correct.",
+  "tempting": "Lower temperature gives steadier answers.",
+  "fixed_in": "\\S7.3",
+  "week": 6,
+  "quote": "they will control it with the help of um temperature or other small small things"
+ },
+ {
+  "id": "7.4",
+  "wrong": "Picking the top word every time gives the best reply.",
+  "tempting": "Each step makes the best choice.",
+  "fixed_in": "\\S7.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "7.5",
+  "wrong": "A model that gives different answers to the same prompt is broken.",
+  "tempting": "Programs should be repeatable.",
+  "fixed_in": "\\S7.5",
+  "week": 6,
+  "quote": "it should give a different answer but there is no patterns to it"
+ },
+ {
+  "id": "7.6",
+  "wrong": "One wrong word is a small, local mistake.",
+  "tempting": "It is one word out of many.",
+  "fixed_in": "\\S7.7",
+  "week": null,
+  "quote": null
+ }
+]

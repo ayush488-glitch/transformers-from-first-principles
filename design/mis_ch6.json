@@ -1,0 +1,42 @@
+[
+ {
+  "id": "6.1",
+  "wrong": "Normalisation is there so that no token can beat another.",
+  "tempting": "The word sounds like making things equal.",
+  "fixed_in": "\\S6.2",
+  "week": 9,
+  "quote": "to remove comparison bias so that nobody beats each other"
+ },
+ {
+  "id": "6.2",
+  "wrong": "Normalising throws away the information in an arrow.",
+  "tempting": "Every arrow comes out the same length.",
+  "fixed_in": "\\S6.2",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "6.3",
+  "wrong": "LayerNorm makes every arrow length 1.",
+  "tempting": "Unit vectors are what ``normalised'' means in school maths.",
+  "fixed_in": "\\S6.2",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "6.4",
+  "wrong": "More layers always means a better model.",
+  "tempting": "Bigger models are better, so deeper must be too.",
+  "fixed_in": "\\S6.1, \\S6.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "6.5",
+  "wrong": "Whether the norm sits before or after a layer is a detail.",
+  "tempting": "Both versions compute the same kinds of things.",
+  "fixed_in": "\\S6.4",
+  "week": null,
+  "quote": null
+ }
+]

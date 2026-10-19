@@ -1,0 +1,58 @@
+[
+ {
+  "id": "11.1",
+  "wrong": "More attention heads means more capacity and a better model.",
+  "tempting": "More heads sounds like more ways of looking, and more of anything sounds better.",
+  "fixed_in": "11.4",
+  "week": 9,
+  "quote": "what does it means that you have number more number of attention heads?"
+ },
+ {
+  "id": "11.2",
+  "wrong": "Making the model bigger always helps, whatever the data.",
+  "tempting": "The famous models are huge.",
+  "fixed_in": "11.2",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "11.3",
+  "wrong": "Compute depends only on the number of parameters.",
+  "tempting": "Parameter count is the number everyone quotes.",
+  "fixed_in": "11.2",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "11.4",
+  "wrong": "The parameter count tells you how much memory the model needs to run.",
+  "tempting": "Weights are the obvious thing to store.",
+  "fixed_in": "11.5",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "11.5",
+  "wrong": "The vocabulary is free; only the layers cost anything.",
+  "tempting": "The embedding table is a lookup, not a computation.",
+  "fixed_in": "11.3",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "11.6",
+  "wrong": "If a change lowers the loss in one small run, the change is better.",
+  "tempting": "A lower number looks like a win.",
+  "fixed_in": "11.6",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "11.7",
+  "wrong": "Width is free: wider only means more ways of looking at a token.",
+  "tempting": "Wider vectors hold more information.",
+  "fixed_in": "11.3",
+  "week": 9,
+  "quote": "if the hidden dimensions are too much, then your more parameters will come into the place or more computations"
+ }
+]

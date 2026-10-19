@@ -1,0 +1,50 @@
+[
+ {
+  "id": "4.1",
+  "wrong": "The causal mask already tells attention the order of the words.",
+  "tempting": "The mask is about who came before whom.",
+  "fixed_in": "S4.1",
+  "week": 9,
+  "quote": "do you really think any of the transformation takes that positional thing"
+ },
+ {
+  "id": "4.2",
+  "wrong": "Adding the position number (0, 1, 2, \\ldots) to every coordinate is enough.",
+  "tempting": "It is the simplest way to write position down.",
+  "fixed_in": "S4.2",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "4.3",
+  "wrong": "Positions have to be learned, like every other weight.",
+  "tempting": "Most things in the model are learned.",
+  "fixed_in": "S4.2, S4.3",
+  "week": 9,
+  "quote": "we want you to also learn positions."
+ },
+ {
+  "id": "4.4",
+  "wrong": "RoPE changes the token's embedding or its value.",
+  "tempting": "Older methods add position to the embedding.",
+  "fixed_in": "S4.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "4.5",
+  "wrong": "What matters to a word is its absolute position in the text.",
+  "tempting": "Positions are counted from the start.",
+  "fixed_in": "S4.5",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "4.6",
+  "wrong": "Because rotations repeat, a far word is confused with a near one.",
+  "tempting": "One clock hand alone does repeat.",
+  "fixed_in": "S4.6",
+  "week": null,
+  "quote": null
+ }
+]

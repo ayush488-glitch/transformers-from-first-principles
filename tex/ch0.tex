@@ -1,0 +1,49 @@
+\section*{0\quad Notation}
+\addcontentsline{toc}{section}{0 Notation}
+\startchapter{0}
+
+We fix these symbols once and never change their meaning. A vector is a row of numbers; a list of
+vectors is stacked, one per row, into a matrix. Shapes are written rows $\times$ columns. Come back to this
+page whenever a symbol looks unfamiliar; each one is also explained in words where it first appears.
+
+\begin{center}
+\small
+\begin{longtable}{@{}l P{8.6cm} l@{}}
+\toprule
+Symbol & Meaning & Shape\\
+\midrule
+\endhead
+$B$ & number of sentences processed together (the \emph{batch}) & scalar\\
+$T$ & number of tokens in each sentence & scalar\\
+$V$ & number of distinct tokens the model knows (the \emph{vocabulary}) & scalar\\
+$d$ & model width: how many numbers describe one token & scalar ($d=4$ in the toy)\\
+$d_k$ & width of one query, key or value vector & scalar ($d_k=4$ in the toy)\\
+$h$ & number of attention heads in one layer & scalar\\
+$d_{\mathrm{ff}}$ & width of the hidden layer inside the MLP & scalar\\
+$L$ & number of layers (blocks) stacked one after another & scalar\\
+$\bm{x}_t$ & the vector for token $t$ (one row of $X$) & $1\times d$\\
+$X$ & all token vectors of one sentence, stacked & $T\times d$\\
+$E$ & the embedding table: one row per token in the vocabulary & $V\times d$\\
+$W_Q, W_K, W_V$ & learned query, key, value matrices & $d\times d_k$\\
+$Q, K, V$ & queries, keys, values: $XW_Q,\ XW_K,\ XW_V$ & $T\times d_k$\\
+$\bm{a}\cdot\bm{b}$ & dot product: $\sum_i a_i b_i$ & scalar\\
+$\lVert\bm{a}\rVert$ & length of an arrow: $\sqrt{\bm{a}\cdot\bm{a}}$ & scalar\\
+$M^\top$ & transpose: rows of $M$ become columns & $(n\times m)\to(m\times n)$\\
+$S$ & match scores $QK^\top$ & $T\times T$\\
+$A$ & attention weights (every row sums to 1) & $T\times T$\\
+$O$ & attention output $AV$ & $T\times d_k$\\
+$\theta$ & an angle; in Chapter 4, the angle by which RoPE turns a query or key at a given position & scalar\\
+KV cache & the keys and values of earlier tokens, kept in memory during generation so they are not recomputed & $L\times 2\times T\times d$ per sentence\\
+$P(w\mid\text{context})$ & probability of token $w$ coming next, given what came before & scalar\\
+$N$ & number of learned parameters (numbers) in the model & scalar\\
+$D$ & number of training tokens the model reads & scalar\\
+$C$ & training compute, counted in floating-point operations ($C\approx 6ND$, Chapter 11) & scalar\\
+\bottomrule
+\end{longtable}
+\end{center}
+When a whole batch is processed, every per-sentence shape gets a $B$ in front: $X$ becomes
+$B\times T\times d$, $S$ becomes $B\times T\times T$, and so on. Nothing else changes.
+
+Try it now. If a sentence has $T=3$ tokens and $d_k=4$, what shape is $Q$? What shape is $S=QK^\top$? And with
+$B=2$ such sentences, what shape is $S$? (Answers: $3\times4$; $3\times3$; $2\times3\times3$.) Did any of
+these surprise you? If so, keep this page open while you read Chapter 3.

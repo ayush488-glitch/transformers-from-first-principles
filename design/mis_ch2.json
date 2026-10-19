@@ -1,0 +1,58 @@
+[
+ {
+  "id": "2.1",
+  "wrong": "A model reads words, or letters, the way a person does.",
+  "tempting": "We see words when we read.",
+  "fixed_in": "S2.2, S2.3",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "2.2",
+  "wrong": "A word the model has never seen makes it fail or print ``unknown''.",
+  "tempting": "Old systems did exactly that.",
+  "fixed_in": "S2.3",
+  "week": 9,
+  "quote": "it will try to go to the nearest token or maybe it will split further or maybe it will write unknown."
+ },
+ {
+  "id": "2.3",
+  "wrong": "A token is a word.",
+  "tempting": "For common words the two coincide.",
+  "fixed_in": "S2.3",
+  "week": 9,
+  "quote": "tokenizing it into the words"
+ },
+ {
+  "id": "2.4",
+  "wrong": "A token id is a meaningful number: id 5 is closer in meaning to id 6 than to id 900.",
+  "tempting": "Ids are numbers, and numbers have an order.",
+  "fixed_in": "S2.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "2.5",
+  "wrong": "The vector of a word changes from sentence to sentence inside the embedding table.",
+  "tempting": "Meaning does change with context.",
+  "fixed_in": "S2.4, S2.6",
+  "week": 9,
+  "quote": "embeddings are same, assume that embeddings are same."
+ },
+ {
+  "id": "2.6",
+  "wrong": "Each number in a word vector means something nameable, like `sentiment'.",
+  "tempting": "In a churn model each clue had a name.",
+  "fixed_in": "S2.5",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "2.7",
+  "wrong": "Similar words get similar vectors because someone listed the synonyms.",
+  "tempting": "Dictionaries list synonyms.",
+  "fixed_in": "S2.5",
+  "week": null,
+  "quote": null
+ }
+]

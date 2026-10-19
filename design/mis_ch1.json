@@ -1,0 +1,66 @@
+[
+ {
+  "id": "1.1",
+  "wrong": "Next-word prediction is shallow autocomplete, so it cannot involve understanding.",
+  "tempting": "Phone keyboards also predict the next word, and they are not clever.",
+  "fixed_in": "\\S1.2, \\S1.8",
+  "week": 2,
+  "quote": "get the next word is a very common myth for the people who do not know"
+ },
+ {
+  "id": "1.2",
+  "wrong": "A number the model gives about itself (``I am 90\\% sure'') is a calibrated probability.",
+  "tempting": "It looks like a percentage, and the model does compute probabilities internally.",
+  "fixed_in": "\\S1.2 (Ch.\\ 7 in depth)",
+  "week": 8,
+  "quote": "that is not calibrated. that is next token prediction after all"
+ },
+ {
+  "id": "1.3",
+  "wrong": "Hallucination is a bug that someone forgot to fix.",
+  "tempting": "Software errors usually are bugs.",
+  "fixed_in": "\\S1.2, consequence (i)",
+  "week": 9,
+  "quote": "it's not something of problem or anything like that. it's a consequence of the process"
+ },
+ {
+  "id": "1.4",
+  "wrong": "Training data needs a human to label every example.",
+  "tempting": "Every earlier ML project (churn, fraud, triage) needed labelled X and Y.",
+  "fixed_in": "\\S1.2, consequence (ii)",
+  "week": 7,
+  "quote": "i have to build a data set labeling pipeline"
+ },
+ {
+  "id": "1.5",
+  "wrong": "A language model looks up sentences it has already seen.",
+  "tempting": "It was trained on the internet, so it must be storing it.",
+  "fixed_in": "\\S1.3 (measured sparsity)",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "1.6",
+  "wrong": "If the right words are present, their order hardly matters.",
+  "tempting": "Keyword search works well in daily life.",
+  "fixed_in": "\\S1.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "1.7",
+  "wrong": "Transformers replaced RNNs mainly because they are more accurate.",
+  "tempting": "Better results are the headline of every paper.",
+  "fixed_in": "\\S1.6, \\S1.7 (parallelism, direct paths)",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "1.8",
+  "wrong": "A counting model knows that \\emph{time} and \\emph{money} are alike.",
+  "tempting": "People know it, and the model has seen both words many times.",
+  "fixed_in": "\\S1.3, \\S1.5",
+  "week": null,
+  "quote": null
+ }
+]

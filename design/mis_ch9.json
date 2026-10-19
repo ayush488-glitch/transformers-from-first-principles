@@ -1,0 +1,42 @@
+[
+ {
+  "id": "9.1",
+  "wrong": "Writing each new token means running the whole sentence through the model again.",
+  "tempting": "The model reads its whole context every time it guesses.",
+  "fixed_in": "9.2, 9.3",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "9.2",
+  "wrong": "The cache is a shortcut that changes the answer slightly.",
+  "tempting": "Caches in everyday software can go stale.",
+  "fixed_in": "9.3 (difference measured as exactly 0)",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "9.3",
+  "wrong": "The cache must also store the queries.",
+  "tempting": "Queries, keys and values are made together.",
+  "fixed_in": "9.3",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "9.4",
+  "wrong": "What a model costs to run is set by its weights alone; context length is free.",
+  "tempting": "Model size is the number everyone quotes.",
+  "fixed_in": "9.4, 9.5",
+  "week": 9,
+  "quote": "should it run in gpu, cpu, mobile phone?"
+ },
+ {
+  "id": "9.5",
+  "wrong": "Fewer key-value heads means the model looks at fewer things.",
+  "tempting": "Heads were introduced as different ways of looking.",
+  "fixed_in": "9.6",
+  "week": null,
+  "quote": null
+ }
+]

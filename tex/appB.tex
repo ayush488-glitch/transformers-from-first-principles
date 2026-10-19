@@ -1,0 +1,116 @@
+\newpage
+\section*{Appendix B\quad Reproducing every number}
+\addcontentsline{toc}{section}{B Reproducing every number}
+\input{data_ch11/counts.tex}
+
+These notes make one promise: no number in them was typed by hand. How would you check a promise like
+that? This appendix tells you how. Every number comes from a script in the \texttt{code/} folder of the companion
+repository; every script writes its numbers into a small file of \LaTeX\ macros, and the text only ever
+uses those macros. If you change a script and rebuild, the text changes with it.
+
+\subsection*{B.1\quad Rebuilding everything}
+
+From the top folder of the repository:
+\begin{center}
+\small
+\begin{tabular}{@{}P{6.2cm} P{7.6cm}@{}}
+\toprule
+Command & What it does\\
+\midrule
+\texttt{make} & runs every number script whose source changed, then builds the PDF with \texttt{latexmk}\\
+\texttt{make clean} & deletes the generated macro files and the build, so the next \texttt{make} redoes everything\\
+\texttt{python3 lint/lint.py tex/ch*.tex} & runs the style checks of the design pack on every chapter\\
+\texttt{python3 code/ch11\_ablate.py --retrain} & retrains the Chapter 11 models (about 5 CPU minutes)\\
+\texttt{python3 code/ch11\_appB\_index.py} & regenerates the script table below from the code itself\\
+\bottomrule
+\end{tabular}
+\end{center}
+The slow step, training the small models of Chapters 8 and 11, caches its results in \texttt{tex/data\_ch8/}
+and \texttt{tex/data\_ch11/}, so an ordinary rebuild takes about a minute. To check that a rebuild is
+faithful, run \texttt{make clean}, retrain, rebuild, and compare the two PDFs' text: with the fixed seeds
+the numbers should agree to the digits printed, except the training times.
+
+\subsection*{B.2\quad Every script, what it writes, and what it checks}
+
+The table is generated from the scripts themselves. ``Checks'' counts the \texttt{assert} statements
+in each script: places where the script stops the build if something disagrees, for example a
+hand-calculation against NumPy, or our parameter calculator
+against the real Hugging Face model classes. In total there are \nElevenScriptCount\ scripts and
+\nElevenAssertCount\ checks.
+
+\begin{center}
+\scriptsize
+\begin{longtable}{@{}P{3.0cm} P{7.2cm} P{3.2cm} r@{}}
+\toprule
+Script & Purpose & Writes & Checks\\
+\midrule
+\endhead
+\csname @@input\endcsname data_ch11/scripts.tex
+\bottomrule
+\end{longtable}
+\end{center}
+
+\paragraph{Checks you can rely on.} Ask yourself, for any number you doubt: what would have caught it if
+it were wrong? A few checks deserve a sentence each.
+\begin{itemize}
+\item The toy attention of Chapter 3 is computed twice, once with NumPy and once with exact fractions,
+and the two must agree to $10^{-12}$.
+\item The parameter calculator of Chapters 10 and 11 must equal the parameter count of the real model
+classes for GPT-2 (\nElevenGptParams) and Qwen3-0.6B (\nElevenQwenParams), built without downloading any
+weights; two calculators written separately must agree.
+\item Derivatives in Appendix A are checked against small finite differences.
+\item Every chapter must pass \texttt{lint/lint.py} with no hits.
+\end{itemize}
+
+\subsection*{B.3\quad Software}
+
+\begin{center}
+\small
+\begin{tabular}{@{}l l@{}}
+\toprule
+Tool & Version used for this edition\\
+\midrule
+\csname @@input\endcsname data_ch11/versions.tex
+\bottomrule
+\end{tabular}
+\end{center}
+Training runs used one CPU thread (\texttt{torch.set\_num\_threads(1)}) and fixed seeds. A different
+machine can give slightly different losses in the last digit; the conclusions in \S11.6 are stated
+against a noise level measured with two seeds for exactly this reason.
+
+\subsection*{B.4\quad What needs the network, and what could not be done here}
+
+Building the notes needs no network at all. Three things would, and in the environment where this
+edition was made they were blocked:
+\begin{itemize}
+\item \textbf{Hugging Face} (\texttt{huggingface.co}): the published \texttt{config.json}, tokenizer and
+weights of Qwen3-0.6B. Until it is reachable, the Qwen3 configuration comes from the Qwen3 technical report
+(2025) and is marked as such in Chapter 10. Our parameter count for that configuration matches the real
+model class exactly, which checks our arithmetic but not the configuration itself.
+\item \textbf{Wikipedia} (\texttt{en.wikipedia.org}, \texttt{dumps.wikimedia.org}): the live page
+\emph{Signs of AI writing}, against which the lint rules must be re-checked, and Simple English Wikipedia
+text as a second corpus for Chapters 1 and 2. Until then, the corpus numbers come from the talk corpus
+only: the nine parts of a corpus of transcribed technical talks on AI engineering
+(\texttt{data/ai\_week1.txt} to \texttt{data/ai\_week9.txt}), parts 1--8 for training and part 9 held out.
+\item \textbf{Large models}: anything that needs a GPU (running Qwen3-0.6B itself, longer training) was
+out of scope. The scripts are written so that the same code runs with a larger budget.
+\end{itemize}
+
+\subsection*{B.5\quad How we will know the notes teach}
+
+Numbers that regenerate show that the notes are \emph{consistent}. Do they show that the notes
+\emph{teach}? No. For that we need readers, and the plan before publication is:
+\begin{enumerate}
+\item \textbf{Pre-test and post-test} with 5 to 10 readers, at least two of whom have been out of
+education for a long time. Each test uses questions written to the chapter objectives. We report the
+normalised gain (Hake, 1998): the share of the possible improvement that each reader actually made.
+\item \textbf{Item analysis} of every \emph{Check yourself} question: how many readers got it right
+(questions everyone gets right or wrong teach us nothing), whether it separates stronger from weaker
+readers, and whether every wrong option was chosen by at least one reader. A wrong option nobody chooses
+means the misconception behind it was not real, and the option is replaced.
+\item \textbf{Think-aloud readings} with 3 to 5 readers who say out loud what they are thinking as they
+read (Ericsson and Simon, 1993). Every place where a reader stalls, rereads or guesses wrongly goes into
+a list, and every item on the list is fixed and tested again.
+\end{enumerate}
+Which of these would convince you, if you were the reader? The results, and the changes they cause, will be published with the next edition alongside an errata
+page.

@@ -1,0 +1,141 @@
+% Shared style for "Transformers from First Principles". Every chapter uses only these environments.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{notes}
+\RequirePackage[margin=1in]{geometry}
+\RequirePackage{amsmath,amssymb,amsthm,bm}
+\RequirePackage{booktabs,array,longtable}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing,shapes.geometric}
+\RequirePackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\RequirePackage{enumitem}
+\RequirePackage{fancyhdr}
+\RequirePackage{xcolor}
+\RequirePackage[framemethod=TikZ]{mdframed}
+\RequirePackage{caption}
+\RequirePackage{fancyvrb}
+\RequirePackage[hidelinks]{hyperref}
+\captionsetup{font=small,labelfont=bf}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{4pt}
+\definecolor{ink}{gray}{0.35}
+\pagestyle{fancy}\fancyhf{}
+\lhead{\small\textsc{Antern Studies}}
+\rhead{\small Transformers from First Principles}
+\cfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% ---------- boxes ----------
+\newmdenv[linewidth=0.6pt,linecolor=black,innerleftmargin=10pt,innerrightmargin=10pt,
+  innertopmargin=6pt,innerbottommargin=6pt,skipabove=8pt,skipbelow=8pt]{plainbox}
+\newmdenv[topline=false,bottomline=false,rightline=false,linewidth=1.2pt,linecolor=ink,
+  innerleftmargin=10pt,innertopmargin=2pt,innerbottommargin=2pt,skipabove=6pt,skipbelow=6pt]{sidebar}
+\newmdenv[linewidth=0.4pt,linecolor=black,topline=true,bottomline=true,leftline=false,rightline=false,
+  innerleftmargin=0pt,innerrightmargin=0pt,innertopmargin=6pt,innerbottommargin=6pt,skipabove=8pt,skipbelow=8pt]{rulebox}
+
+% Abstraction box: the general principle
+\newenvironment{principle}[1]{\begin{plainbox}\noindent\textbf{Abstraction --- #1.}\ }{\end{plainbox}}
+% Chapter map (advance organiser), first thing in every chapter
+\newenvironment{chaptermap}{\begin{rulebox}\small\noindent\textbf{Map of this chapter.}\ }{\end{rulebox}}
+% Before you start: prior-knowledge check, refreshers given right after
+\newenvironment{beforeyoustart}{\begin{plainbox}\small\noindent\textbf{Before you start.}\ }{\end{plainbox}}
+% A tempting wrong idea (refutation text). Arg: misconception id, e.g. 3.3
+\newenvironment{wrongidea}[1]{\begin{sidebar}\noindent\textbf{A tempting wrong idea (M#1).}\ }{\end{sidebar}}
+% Where this picture breaks (limit of an analogy)
+\newenvironment{breaks}{\begin{sidebar}\small\noindent\textsc{Where this picture breaks.}\ }{\end{sidebar}}
+% Looking back: spaced questions about earlier chapters
+\newenvironment{lookingback}{\begin{plainbox}\small\noindent\textbf{Looking back.}\ }{\end{plainbox}}
+
+% ---------- rungs and run-in labels ----------
+\newcommand{\Picture}{\par\smallskip\noindent\textsc{Picture it.}\ }
+\newcommand{\Exactly}{\par\smallskip\noindent\textsc{Say it exactly.}\ }
+\newcommand{\Why}{\par\smallskip\noindent\textsc{Why it had to be this way.}\ }
+\newcommand{\Predict}{\par\smallskip\noindent\textbf{Predict first.}\ }
+\newcommand{\Sanity}{\par\smallskip\noindent\textbf{Sanity check.}\ }
+\newcommand{\Summary}[1]{\par\smallskip\noindent\textit{In one sentence: #1}\par}
+
+% ---------- questions ----------
+% Check yourself questions are numbered per chapter: set \chapnum at the start of each chapter.
+\newcommand{\chapnum}{0}
+\newcounter{checkq}
+\newcounter{exq}
+\newcommand{\startchapter}[1]{\renewcommand{\chapnum}{#1}\setcounter{checkq}{0}\setcounter{exq}{0}}
+\newenvironment{checkq}{\refstepcounter{checkq}\begin{plainbox}\small\noindent\textbf{Check yourself \chapnum.\thecheckq.}\ }{\end{plainbox}}
+\newenvironment{exercise}{\refstepcounter{exq}\par\medskip\noindent\textbf{Exercise \chapnum.\theexq.}\ }{\par}
+\newlist{options}{enumerate}{1}
+\setlist[options]{label=(\alph*),leftmargin=2.2em,itemsep=1pt,topsep=2pt}
+
+% ---------- maths helpers ----------
+\newcommand{\shape}[1]{\quad{\color{ink}\scriptstyle[#1]}}
+\newcommand{\tok}[1]{\texttt{#1}}
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\RMS}{\operatorname{RMS}}
+
+% ---------- the machine, drawn block by block ----------
+% \machine{N}{caption}: the whole decoder, with blocks from chapters < N drawn solid, blocks from
+% chapter N highlighted, and blocks still ahead drawn as dashed ghosts.
+\newcount\machinech
+\tikzset{
+  mdone/.style={draw=black, line width=0.8pt, fill=black!7, text=black},
+  mcur/.style={draw=black, line width=2pt, fill=black!25, text=black},
+  mghost/.style={draw=black!45, dashed, line width=0.6pt, fill=white, text=black!55},
+  st/.code={\ifnum#1<\machinech\tikzset{mdone}\else\ifnum#1=\machinech\tikzset{mcur}\else\tikzset{mghost}\fi\fi},
+  sttwo/.code 2 args={\ifnum#2=\machinech\tikzset{mcur}\else\ifnum#1=\machinech\tikzset{mcur}\else
+     \ifnum#1<\machinech\tikzset{mdone}\else\tikzset{mghost}\fi\fi\fi},
+  stthree/.code n args={3}{\ifnum#1=\machinech\tikzset{mcur}\else\ifnum#2=\machinech\tikzset{mcur}\else
+     \ifnum#3=\machinech\tikzset{mcur}\else\ifnum#1<\machinech\tikzset{mdone}\else\tikzset{mghost}\fi\fi\fi\fi},
+  mbox/.style={rounded corners=3pt, minimum width=6.9cm, minimum height=0.74cm, align=center, font=\small, inner sep=2pt},
+  sbox/.style={rounded corners=3pt, text width=2.7cm, minimum height=1.1cm, align=center, font=\footnotesize, inner sep=3pt},
+  marr/.style={-{Stealth[length=2.6mm]}, line width=0.8pt, black!80},
+  mtag/.style={font=\footnotesize\itshape, text=black!75, anchor=east},
+  mshape/.style={font=\footnotesize, text=black!80, anchor=west},
+}
+\newcommand{\machinediagram}[1]{%
+\machinech=#1\relax
+\begin{tikzpicture}[x=1cm,y=1cm]
+% main column
+\node[mbox, st=1] (txt) at (0,0) {text in: \texttt{waste of time}};
+\node[mbox, st=2] (tok) at (0,-1.1) {cut into tokens, look up their ids};
+\node[mbox, st=2] (emb) at (0,-2.2) {embedding: one arrow per token};
+\node[mbox, sttwo={6}{10}] (n1) at (0,-3.55) {\ifnum\machinech<10 norm\else RMSNorm\fi};
+\node[mbox, stthree={3}{5}{10}, minimum height=1.0cm] (att) at (0,-4.75) {%
+  \ifnum\machinech<5 attention: tokens talk\else\ifnum\machinech<10 multi-head attention: tokens talk\else grouped-query attention\\[-1pt]with QK-norm\fi\fi};
+\node[circle, draw, st=5, inner sep=1pt, minimum size=0.62cm, font=\normalsize] (a1) at (0,-5.95) {$+$};
+\node[mbox, sttwo={6}{10}] (n2) at (0,-7.0) {\ifnum\machinech<10 norm\else RMSNorm\fi};
+\node[mbox, sttwo={5}{10}] (mlp) at (0,-8.1) {\ifnum\machinech<10 MLP: each token thinks alone\else SwiGLU MLP: each token thinks alone\fi};
+\node[circle, draw, st=5, inner sep=1pt, minimum size=0.62cm, font=\normalsize] (a2) at (0,-9.2) {$+$};
+\node[mbox, st=6] (fn) at (0,-10.45) {final norm};
+\node[mbox, st=7] (un) at (0,-11.55) {scores for every word in the vocabulary};
+\node[mbox, st=7] (sm) at (0,-12.65) {softmax, then pick the next word};
+% the repeated layer frame
+\draw[rounded corners=6pt, st=5, fill=none] (-3.75,-2.95) rectangle (4.25,-9.85);
+\node[anchor=south west, font=\footnotesize, st=5, draw=none, fill=none] at (-3.7,-9.8) {repeated $L$ times};
+% side boxes
+\node[sbox, st=4] (pos) at (-6.9,-4.75) {positions:\\RoPE turns $q$ and $k$};
+\node[sbox, st=9] (kv) at (6.3,-4.75) {KV cache: keep old keys and values};
+\node[sbox, st=8] (loss) at (6.3,-12.65) {loss: surprise at the right word (training)};
+% arrows along the column
+\foreach \a/\b in {txt/tok, tok/emb, emb/n1, n1/att, att/a1, a1/n2, n2/mlp, mlp/a2, a2/fn, fn/un, un/sm} \draw[marr] (\a) -- (\b);
+\draw[marr] (pos) -- (att); \draw[marr, <->] (att) -- (kv); \draw[marr] (sm) -- (loss);
+% residual paths
+\draw[marr] (0,-2.95) -- (3.85,-2.95) |- (a1);
+\draw[marr] (0,-6.45) -- (3.85,-6.45) |- (a2);
+% shapes
+\node[mshape] at (0.12,-1.65) {$B\times T$};
+\node[mshape] at (0.12,-2.62) {$B\times T\times d$};
+\node[mshape] at (0.12,-12.1) {$B\times T\times V$};
+% chapter tags
+\foreach \n/\c in {txt/1, tok/2, emb/2, n1/6, att/{3, 5}, n2/6, mlp/5, fn/6, un/7, sm/7}
+  \node[mtag, anchor=north east] at ([xshift=-4.5mm]\n.north west) {Ch.\ \c};
+\end{tikzpicture}}
+\newcommand{\machinelegend}{%
+\tikz[baseline=-0.6ex]\node[mdone, rounded corners=2pt, minimum width=0.7cm, minimum height=0.32cm]{};\ built earlier\quad
+\tikz[baseline=-0.6ex]\node[mcur, rounded corners=2pt, minimum width=0.7cm, minimum height=0.32cm]{};\ built in this chapter\quad
+\tikz[baseline=-0.6ex]\node[mghost, rounded corners=2pt, minimum width=0.7cm, minimum height=0.32cm]{};\ still ahead}
+\newcommand{\machine}[2]{%
+\begin{figure}[!htb]\centering
+\resizebox{\linewidth}{!}{\machinediagram{#1}}\\[4pt]
+{\small\machinelegend}
+\caption{\textbf{Where we are in the machine.} #2}
+\end{figure}}

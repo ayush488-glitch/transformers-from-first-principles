@@ -1,0 +1,42 @@
+\texttt{ch1\_figs.py} & Chapter 1 picture: one pass over a batch makes a guess at every position (inputs vs. targets). & --- & 0\\
+\texttt{ch1\_numbers.py} & Small numbers used in Chapter 1's prior-knowledge check and worked examples. & num\_ch1.tex & 0\\
+\texttt{ch2\_bpe.py} & Chapter 2 numbers: characters vs words vs BPE on the talks corpus, and word vectors from co-occurrence. & bpe\_growth.dat, nn.json, num\_ch2.tex & 1\\
+\texttt{ch2\_figs.py} & Pictures for Chapter 2: token ids, the one-hot lookup as a matrix product, and a batch of ids $\to$ arrows. & --- & 1\\
+\texttt{ch2\_mis.py} & Misconception inventories for Chapters 2 and 4; design notes only, not printed in the book. & --- & 1\\
+\texttt{ch3\_figs.py} & Pictures of every vector and matrix product in Chapter 3 (numbers from code/vocab.py). & --- & 3\\
+\texttt{ch3\_numbers.py} & Extra numbers for Chapter 3: the churn-score picture of a dot product and the softmax-shift question. & num\_ch3.tex & 1\\
+\texttt{ch4\_figs.py} & Chapter 4 pictures: positions as matrices, the rotation acting on a pair, q and k before/after RoPE, & num\_ch4.tex & 3\\
+\texttt{ch4\_rope.py} & Chapter 4 numbers: order blindness, sinusoidal positions, and RoPE on the toy. Writes tex/num\_ch4.tex. & config.json, num\_ch4.tex, wavelengths.dat, waves.dat & 5\\
+\texttt{ch5\_figs.py} & Chapter 5 pictures: one head's blend, each head's products, stitching the heads, the MLP, the residual & --- & 4\\
+\texttt{ch5\_misconceptions.py} & Misconception inventories for Chapters 5, 6 and 7 $\to$ design/mis\_ch5.json, mis\_ch6.json, mis\_ch7.json. & --- & 1\\
+\texttt{ch5\_numbers.py} & Numbers for Chapter 5 (many heads, the MLP, the residual stream). Writes tex/num\_ch5.tex. & identity.dat, num\_ch5.tex & 3\\
+\texttt{ch5\_random\_blocks.py} & Random (untrained) transformer blocks for the depth experiments of Chapters 5 and 6. & --- & 0\\
+\texttt{ch6\_figs.py} & Vector and matrix pictures for Chapter 6. Writes tex/fig\_ch6\_*.tex (uses code/figlib.py). & --- & 3\\
+\texttt{ch6\_numbers.py} & Numbers for Chapter 6 (normalisation and depth). Writes tex/num\_ch6.tex and tex/data\_ch6/*.dat. & depth.dat, num\_ch6.tex & 4\\
+\texttt{ch7\_figs.py} & Vector and matrix pictures for Chapter 7. Writes tex/fig\_ch7\_*.tex (uses code/figlib.py). & --- & 4\\
+\texttt{ch7\_numbers.py} & Numbers for Chapter 7 (from scores to words). Writes tex/num\_ch7.tex. & num\_ch7.tex, temperature.dat & 3\\
+\texttt{ch8\_figs.py} & Pictures of the matrices and vectors in Chapter 8 (and a helper reused by ch9\_figs / appA\_figs). & --- & 4\\
+\texttt{ch8\_misconceptions.py} & Misconceptions for Chapter 8 (design inventory, not printed in the book). Writes design/mis\_ch8.json. & --- & 1\\
+\texttt{ch8\_numbers.py} & All numbers and figure data for Chapter 8. Run after code/ch8\_train.py. & landscape.dat, num\_ch8.tex, train.json & 7\\
+\texttt{ch8\_toy.py} & Chapter 8 toy: the skeleton model (embeddings $\to$ one attention head $\to$ tied unembedding), & --- & 0\\
+\texttt{ch8\_train.py} & Chapter 8: train a tiny decoder-only transformer on the talk corpus (character level). & curve.dat, overfit.dat, train.json & 0\\
+\texttt{ch9\_figs.py} & Pictures for Chapter 9: the KV cache growing row by row, the new query meeting the cached keys, & --- & 2\\
+\texttt{ch9\_mis.py} & Write and verify design/mis\_ch9.json and design/mis\_ch10.json (design inventory, not printed in the book). & --- & 1\\
+\texttt{ch9\_numbers.py} & Chapter 9 numbers: KV cache on the toy, cost counts, and the memory bill of real models. & num\_ch9.tex & 2\\
+\texttt{ch10\_figs.py} & Chapter 10 figures: weight matrices drawn to scale (shapes read from the real model classes), & num\_ch10.tex, num\_ch10figs.tex & 5\\
+\texttt{ch10\_numbers.py} & Chapter 10 numbers: parameter counts checked against transformers, shapes from a forward pass, FLOPs. & num\_ch10.tex & 5\\
+\texttt{ch10\_verify.py} &  & --- & 0\\
+\texttt{ch11\_ablate.py} & Chapter 11 ablations: tiny decoder-only transformers trained on the talk corpus. & ablations.json & 0\\
+\texttt{ch11\_appB\_index.py} & Builds the script index for Appendix B from the code/ directory itself, so the appendix never goes & --- & 0\\
+\texttt{ch11\_budget.py} & Chapter 11 budget calculator and design scenarios. Writes tex/num\_ch11.tex. & ablations.dat, ablations.json, num\_ch11.tex & 6\\
+\texttt{ch11\_figs.py} & Chapter 11 figures: the parameter count as a sum of labelled matrix blocks, drawn to scale, for & num\_ch11.tex & 4\\
+\texttt{ch11\_mis.py} & Misconceptions for Chapter 11 (design inventory, not printed in the book). & --- & 1\\
+\texttt{appA\_check.py} & Appendix A: every derivative in the appendix, checked against finite differences. & num\_appA.tex & 7\\
+\texttt{appA\_figs.py} & Pictures for Appendix A: the gradient at the end (p - y) and the gradient of V (A\textasciicircum{}T G) for the toy's & --- & 2\\
+\texttt{calc.py} & Parameter, FLOP and KV-cache calculator from a config dict (Chapters 9, 10, 11). & config.json & 0\\
+\texttt{corpus.py} & Real-corpus numbers for Chapter 1: n-gram sparsity on a corpus of transcribed technical talks. & corpus.json, num\_corpus.tex & 0\\
+\texttt{figlib.py} & Draw matrices, vectors and their multiplication as TikZ, with real numbers. & --- & 0\\
+\texttt{history.py} & Numbers for the history section of Chapter 1 (all computed, none typed). & corpus.json, num\_history.tex & 2\\
+\texttt{toy.py} & Toy transformer numbers for the sample chapter. & num\_toy.tex & 8\\
+\texttt{toy\_block.py} & The toy transformer block of Chapters 5-7, built on code/vocab.py (d = 4, 12-token vocabulary). & --- & 3\\
+\texttt{vocab.py} & The toy vocabulary and embedding table shared by every chapter (d = 4). & --- & 1\\

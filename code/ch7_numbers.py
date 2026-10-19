@@ -1,0 +1,80 @@
+"""Numbers for Chapter 7 (from scores to words). Writes tex/num_ch7.tex."""
+import math, pathlib, numpy as np
+import toy_block as tb
+from vocab import E, VOCAB, ID, REPLY
+OUT = pathlib.Path(__file__).resolve().parent.parent / "tex"
+M = []
+def m(k, v): M.append(f"\\newcommand{{\\{k}}}{{{v}}}")
+def f(v, n=3): return f"{v:.{n}f}"
+def vec(v, n=3): return "(" + ", ".join(f(x, n) for x in v) + ")"
+NAME = {"waste": "Waste", "of": "Of", "time": "Time", "not": "Not", "very": "Very", "useful": "Useful",
+        "Sorry": "Sorry", ",": "Comma", "this": "This", "has": "Has", "been": "Been", ".": "Stop"}
+r = tb.forward(["waste", "of", "time"], norm="rms")
+h = r["h2"][2]; u = tb.rmsnorm(h); lg = r["logits"][2]; p = r["probs"][2]
+assert np.allclose(lg, u @ E.T)
+m("nSevenH", vec(h)); m("nSevenU", vec(u)); m("nSevenRmsH", f(math.sqrt((h ** 2).mean())))
+m("nSevenLenU", f(np.linalg.norm(u)))
+order = np.argsort(-lg)
+for w, k in NAME.items():
+    i = ID[w]
+    m(f"nSevenLogit{k}", f(lg[i], 2)); m(f"nSevenP{k}", f(p[i]))
+    m(f"nSevenLen{k}", f(np.linalg.norm(E[i])))
+    c = u @ E[i] / (np.linalg.norm(u) * np.linalg.norm(E[i])); m(f"nSevenAng{k}", f"{math.degrees(math.acos(np.clip(c, -1, 1))):.0f}")
+    m(f"nSevenRank{k}", str(int(np.where(order == i)[0][0]) + 1))
+# full table rows, sorted by logit
+rows = []
+for i in order:
+    c = u @ E[i] / (np.linalg.norm(u) * np.linalg.norm(E[i]))
+    rows.append(f"\\tok{{{VOCAB[i]}}} & ({', '.join(str(int(x)) for x in E[i])}) & {np.linalg.norm(E[i]):.3f} & "
+                f"{math.degrees(math.acos(np.clip(c,-1,1))):.0f}$^\\circ$ & {lg[i]:.2f} & {math.exp(lg[i]):.2f} & {p[i]:.3f}\\\\")
+(OUT / "data_ch7").mkdir(exist_ok=True)
+(OUT / "data_ch7" / "logit_rows.tex").write_text("\n".join(rows) + "\n")
+m("nSevenTop", VOCAB[order[0]]); m("nSevenSecond", VOCAB[order[1]]); m("nSevenThird", VOCAB[order[2]])
+m("nSevenExpSum", f(np.exp(lg).sum(), 2)); m("nSevenV", str(len(VOCAB)))
+m("nSevenUniform", f(1 / len(VOCAB)))
+# temperature
+for T, k in [(0.5, "Half"), (1.0, "One"), (2.0, "Two"), (0.1, "Tenth")]:
+    pt = tb.softmax(lg / T)
+    m(f"nSevenT{k}Sorry", f(pt[ID["Sorry"]])); m(f"nSevenT{k}Second", f(pt[order[1]])); m(f"nSevenT{k}Third", f(pt[order[2]]))
+    m(f"nSevenT{k}Min", f(pt.min()))
+    ent = -(pt * np.log2(pt)).sum(); m(f"nSevenT{k}Ent", f(ent, 2))
+m("nSevenMaxEnt", f(math.log2(len(VOCAB)), 2))
+with open(OUT / "data_ch7" / "temperature.dat", "w") as fh:
+    fh.write("T psorry psecond pthird ent\n")
+    for T in np.round(np.arange(0.1, 3.01, 0.1), 2):
+        pt = tb.softmax(lg / T); fh.write(f"{T} {pt[ID['Sorry']]:.4f} {pt[order[1]]:.4f} {pt[order[2]]:.4f} {-(pt*np.log2(pt)).sum():.4f}\n")
+# top-k and top-p
+k = 3; keep = order[:k]; pk = np.zeros_like(p); pk[keep] = p[keep]; pk /= pk.sum()
+m("nSevenTopkMass", f(p[keep].sum())); m("nSevenTopkSorry", f(pk[ID["Sorry"]])); m("nSevenK", str(k))
+for P, kk in [(0.5, "Half"), (0.9, "Ninety")]:
+    cum = np.cumsum(p[order]); n_keep = int(np.searchsorted(cum, P) + 1)
+    m(f"nSevenTopp{kk}N", str(n_keep)); m(f"nSevenTopp{kk}Mass", f(cum[n_keep - 1]))
+    m(f"nSevenTopp{kk}Sorry", f(p[ID["Sorry"]] / cum[n_keep - 1]))
+    m(f"nSevenTopp{kk}Words", ", ".join("\\tok{" + VOCAB[i].replace(",", "{,}") + "}" for i in order[:n_keep]))
+# sampling with seeds
+g = np.random.default_rng(42); N = 1000
+draws = g.choice(len(VOCAB), size=N, p=p)
+m("nSevenN", f"{N:,}".replace(",", "{,}")); m("nSevenSampSorry", str(int((draws == ID["Sorry"]).sum())))
+m("nSevenSampSecond", str(int((draws == order[1]).sum())))
+first10 = np.random.default_rng(42).choice(len(VOCAB), size=10, p=p)
+m("nSevenFirstTen", ", ".join("\\tok{" + VOCAB[i].replace(",", "{,}") + "}" for i in first10))
+again = np.random.default_rng(42).choice(len(VOCAB), size=10, p=p); assert (again == first10).all()
+# greedy continuation with the toy (it knows only three patterns)
+seq = ["waste", "of", "time"]
+for _ in range(4):
+    rr = tb.forward(seq, norm="rms"); seq.append(VOCAB[rr["logits"][-1].argmax()])
+m("nSevenGreedy", " ".join("\\tok{" + w.replace(",", "{,}") + "}" for w in seq[3:]))
+# probability the toy assigns to each true next token at every position (B x T predictions)
+for j, (w, nxt) in enumerate([("waste", "of"), ("of", "time"), ("time", "Sorry")]):
+    m(f"nSevenTrue{NAME[w]}", f(r["probs"][j, ID[nxt]]))
+# compounding: chance a 7-token reply has no wrong token if each is right with probability q
+for q, kq in [(0.99, "NinetyNine"), (0.95, "NinetyFive"), (0.9, "Ninety")]:
+    m(f"nSevenChain{kq}", f(q ** len(REPLY)))
+    v = q ** 100; a, b = f"{v:.2e}".split("e")
+    m(f"nSevenChainHundred{kq}", f(v) if v >= 1e-3 else f"{float(a):.1f}\\times10^{{{int(b)}}}")
+m("nSevenReplyLen", str(len(REPLY)))
+# the logit gap and the odds: e^(gap)
+gap = lg[ID["Sorry"]] - lg[order[1]]; m("nSevenGap", f(gap, 2)); m("nSevenOdds", f(math.exp(gap), 2))
+m("nSevenOddsCheck", f(p[ID["Sorry"]] / p[order[1]], 2)); assert abs(math.exp(gap) - p[ID["Sorry"]] / p[order[1]]) < 1e-9
+(OUT / "num_ch7.tex").write_text("% AUTO-GENERATED by code/ch7_numbers.py\n" + "\n".join(M) + "\n")
+print("ch7 ok", [VOCAB[i] for i in order[:4]], np.round(p[order[:4]], 3), seq)

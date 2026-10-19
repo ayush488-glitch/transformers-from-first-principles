@@ -1,0 +1,528 @@
+\newpage
+\section*{5\quad Many heads, the MLP, the residual stream}
+\addcontentsline{toc}{section}{5 Many heads, the MLP, the residual stream}
+\startchapter{5}
+\ifdefined\fitwidthFourFive\else
+\newsavebox{\fitboxFourFive}
+\newcommand{\fitwidthFourFive}[1]{\sbox{\fitboxFourFive}{\begin{tabular}{@{}c@{}}#1\end{tabular}}\ifdim\wd\fitboxFourFive>\linewidth\resizebox{\linewidth}{!}{\usebox{\fitboxFourFive}}\else\usebox{\fitboxFourFive}\fi}
+\fi
+
+\begin{chaptermap}
+\emph{The problem:} one attention head lets \tok{time} look back, but it can only ask one question at a time,
+and nothing yet lets a token \emph{think} about what it heard. \emph{The steps:} see why one head blurs two
+answers into one (\S5.1); split the width into two heads that ask different questions (\S5.2); stitch their
+answers back together (\S5.3); give each token a private checklist of patterns, the MLP (\S5.4); and keep
+every layer's work on a shared notebook, the residual stream (\S5.5). \emph{Where it ends:} with one complete
+transformer block that, on our three tokens, predicts \tok{of} after \tok{waste}, \tok{time} after \tok{of}
+and \tok{Sorry} after \tok{time}, all in one pass.
+\end{chaptermap}
+
+\machine{5}{You are here: Chapter 5 turns the single attention head into several heads, adds the MLP
+(each token thinks alone), and adds the two $+$ circles of the residual stream. With these, the dashed
+frame becomes one complete layer, which a real model repeats $L$ times. The norms are still ahead
+(Chapter 6).}
+
+\begin{beforeyoustart}
+Five quick questions. Answer each, then read the refresher under it.
+\begin{enumerate}[label=\arabic*.,leftmargin=1.6em]
+\item Add the arrows $(1,2)$ and $(3,-1)$.\\
+\emph{Refresher:} add matching entries: $(1+3,\ 2-1)=(4,1)$. On paper, put the second arrow's tail on the
+first arrow's head.
+\item What is the average of the arrows $(1,1,0,0)$ and $(0,0,0,1)$?\\
+\emph{Refresher:} add them and halve every entry: $(0.5, 0.5, 0, 0.5)$.
+\item Write the list $(2,1)$ followed by the list $(3,4)$ as one list.\\
+\emph{Refresher:} placing lists end to end is called \emph{concatenating}: $(2,1,3,4)$.
+\item What is the larger of $0$ and $-1.5$? Of $0$ and $\nFiveNThreeTime$?\\
+\emph{Refresher:} the function $\max(0, x)$ keeps positive numbers and turns negative ones into 0. Here: $0$
+and $\nFiveNThreeTime$.
+\item In Chapter 3, how much of its attention did \tok{time} give to \tok{waste}?\\
+\emph{Refresher:} \nFiveChThreeWaste\%, and \nFiveChThreeOf\% to \tok{of}. If that number is hazy, reread \S3.6
+before going on.
+\end{enumerate}
+\end{beforeyoustart}
+
+%---------------------------------------------------------------------
+\subsection*{5.1\quad One head, one blurred answer}
+
+\Predict In Chapter 3, one head computed \emph{one} set of shares for \tok{time}, and handed back \emph{one}
+blend of value arrows. Suppose \tok{time} needs two different things: the judgement in \tok{waste}, and the
+fact that \tok{of} sits right before it. Can one blend carry both, and keep them apart? Make a guess before
+reading on.
+
+\Picture Two colleagues report to you at the same moment, into the same microphone. You hear one mixed sound.
+You can tell that two people spoke, but you cannot tell who said what.
+
+\Exactly Take the value arrows of Chapter 3 for \tok{waste} and \tok{of}. A head that splits its
+attention evenly hands back half of one plus half of the other, entry by entry (top row of
+Figure~\ref{fig:ch5blend}). Now take two \emph{different} value arrows (bottom row). Their even blend is
+the same arrow. Our script checks this.
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_blend.tex}}
+\captionof{figure}{One head, one blend. Top: half of $\bm{v}_{\text{waste}}$ plus half of $\bm{v}_{\text{of}}$, entry by entry. Bottom: a different pair of arrows gives exactly the same shaded result, so the result alone cannot say who said what.}
+\label{fig:ch5blend}
+\end{center}
+ Two different pairs of reports, one identical blend: after the
+averaging, the token cannot know which pair it heard. A weighted average is a single arrow, and a single
+arrow can be built from many different mixtures.
+
+\begin{breaks}
+The microphone picture suggests the information is gone for good. In a trained model the value arrows are
+learned, and they can be made to point in separate directions so that a blend is still readable. The real
+limit is that one head has one set of shares: it must decide how much \tok{waste} matters and how much
+\tok{of} matters with a single softmax, so emphasising one always takes attention from the other.
+\end{breaks}
+
+\Why A softmax hands out shares that add to 1. So within one head, attention is a fixed budget, and every
+question competes for it. To ask two questions without competition, you need two budgets.
+
+\begin{wrongidea}{5.2}
+\emph{One head can attend to two tokens equally well, by giving each 50\%.} It can attend to both, but it
+cannot keep their messages apart, and it cannot make one share bigger without shrinking the other. That is
+the difference between ``listening to two people'' and ``hearing two people talk at once''.
+\end{wrongidea}
+
+\begin{checkq}
+A single head gives \tok{time} the shares $(0.5, 0.5, 0)$ over \tok{waste}, \tok{of}, \tok{time}. What can
+\tok{time} tell from the output alone?
+\begin{options}
+\item Exactly what \tok{waste} said and exactly what \tok{of} said.
+\item The average of what they said, but not which part came from whom.
+\item Nothing at all, because averages destroy everything.
+\item What \tok{time} itself said, since it always attends to itself.
+\end{options}
+\end{checkq}
+
+\Summary{One head returns one weighted average, so asking two questions needs two heads.}
+
+%---------------------------------------------------------------------
+\subsection*{5.2\quad Two heads, each half as wide}
+
+\Picture Instead of one reporter who listens to everyone, send two reporters with different briefs. One is
+told ``find any judgement nearby''. The other is told ``find the small linking words''. Each writes a short
+note.
+
+The budget does not grow. Our arrows still have $d=4$ numbers, so the two heads get $d_k=2$ each. In the
+same way, a model with width 64 and two heads gives each head 32 recipes. Each head is narrower, and in exchange there are more of them.
+
+\paragraph{Worked example: head 1, fully.} Head 1 has its own three machines, each $4\times2$ (four
+numbers in, two out):
+\[
+W_Q^{(1)}=\nFiveWQone,\quad W_K^{(1)}=\nFiveWKone,\quad W_V^{(1)}=\nFiveWVone \shape{d\times d_k=4\times2}
+\]
+Figure~\ref{fig:ch5headone} does the three products. In each one, the outlined row meets the outlined
+column, and the dark cell is the number they make.
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_headone.tex}}
+\captionof{figure}{Head 1, step by step. Top: \tok{time}'s arrow through $W_Q^{(1)}$ gives its $1\times2$ query. Middle: every token's arrow through $W_K^{(1)}$ gives one key per row. Bottom: the query against the transposed keys gives one raw score per token; \tok{waste} wins with 4.}
+\label{fig:ch5headone}
+\end{center}
+
+So the raw scores are $\nFiveSone$. Dividing by $\sqrt{d_k}=\sqrt2$ gives $\nFiveSoneScaled$, and the softmax gives the shares
+\[
+\bm{a}^{(1)}_{\text{time}} = (\nFiveAoneWaste,\ \nFiveAoneOf,\ \nFiveAoneTime).
+\]
+Head 1 gives \nFivePoneWaste\% of its attention to \tok{waste}. It is the judgement-finder.
+
+\paragraph{Head 2: your turn.} Head 2 uses
+\[
+W_Q^{(2)}=\nFiveWQtwo,\quad W_K^{(2)}=\nFiveWKtwo .
+\]
+\Predict Look at the second row of $W_K^{(2)}$: only \tok{of}, whose arrow is $(0,1,0,0)$, can produce a
+non-zero key. Which token will head 2 favour? Fill in the question marks of Figure~\ref{fig:ch5headtwo}:
+$\bm{q}^{(2)}_{\text{time}}$, the three keys, then the three raw scores. Check with Answer 5.2.
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_headtwo.tex}}
+\captionof{figure}{Head 2, your turn. Multiply as in Figure~\ref{fig:ch5headone} and fill in the cells marked ?.}
+\label{fig:ch5headtwo}
+\end{center}
+
+
+\Sanity The scaled scores are
+\[\nFiveStwoScaled,\]
+and the shares come out as $(\nFiveAtwoWaste,\ \nFiveAtwoOf,\ \nFiveAtwoTime)$: \nFivePtwoOf\% on \tok{of}. The shares add to 1, and the
+favourite is the token you predicted.
+
+\begin{center}
+\small
+\begin{tabular}{@{}l c c c@{}}
+\toprule
+\tok{time} attends to & \tok{waste} & \tok{of} & \tok{time}\\
+\midrule
+Chapter 3 (one head, $d_k=4$) & \nFiveChThreeWaste\% & \nFiveChThreeOf\% & \apctTime\%\\
+Head 1 ($d_k=2$) & \nFivePoneWaste\% & \nFivePoneOf\% & \nFivePoneTime\%\\
+Head 2 ($d_k=2$) & \nFivePtwoWaste\% & \nFivePtwoOf\% & \nFivePtwoTime\%\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each head now spends its whole budget on its own question. One head mostly hears \tok{waste}; the other mostly
+hears \tok{of}.
+
+\begin{breaks}
+Our two reporters have tidy, nameable briefs because we wrote the weights by hand. Heads in trained models
+are learned, often overlap, and many have no neat job. Michel, Levy and Neubig (2019) removed most of the heads
+of trained models one at a time and found that many could go with little loss.
+\end{breaks}
+
+\Why Splitting the width keeps the cost the same (the four machines of the block still hold $4\times d^2$
+numbers in total) while giving the token several independent budgets of attention. The price is that each head
+asks with fewer numbers, so each question is cruder.
+
+\begin{wrongidea}{5.1}
+\emph{More heads is always better.} With the width fixed, more heads means narrower heads. Taken to the
+extreme, a head with $d_k=1$ compares single numbers, a very blunt question. The number of heads is a trade-off to choose, and Chapter 11
+treats it as one.
+\end{wrongidea}
+
+\begin{wrongidea}{5.5}
+\emph{Each head has a fixed job, like ``the grammar head''.} Our toy heads do, because we designed them. In a
+trained model a head's job is whatever helped predict the next token, and it is often a mixture.
+\end{wrongidea}
+
+\begin{checkq}
+A model has width $d=64$. You change it from 2 heads to 8 heads and keep $d$ fixed. What happens?
+\begin{options}
+\item Each head becomes 4 times wider, so each question is sharper.
+\item Each head drops from 32 to 8 numbers, and there are 4 times as many independent sets of shares.
+\item The number of attention weights grows 4 times.
+\item The model necessarily gets better, because more heads see more.
+\end{options}
+\end{checkq}
+
+\Summary{Splitting the width into heads gives a token several separate attention budgets at no extra cost,
+each one asking a cruder question.}
+
+%---------------------------------------------------------------------
+\subsection*{5.3\quad Stitching the notes together}
+
+\Picture The two reporters staple their notes side by side, and an editor rewrites the stapled page in the
+house style.
+
+\Exactly Each head hands back a short arrow for \tok{time}, of width $d_k=2$. Concatenate them into one
+arrow of width $d=4$, then multiply by an output matrix $W_O$ ($d\times d$), the editor:
+\[
+\bm{o}_{\text{time}} = \big[\,\bm{o}^{(1)}_{\text{time}}\ \ \bm{o}^{(2)}_{\text{time}}\,\big]\,W_O \shape{(1\times d)(d\times d)=1\times d}
+\]
+Figure~\ref{fig:ch5concat} shows both steps with the numbers.
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_concat.tex}}
+\captionof{figure}{Stitching the heads. Top: head 1's note and head 2's note are placed side by side (head 1's part shaded). Bottom: the stitched arrow times $W_O$. Our toy $W_O$ is the identity, so each cell passes straight through; a trained $W_O$ would mix them.}
+\label{fig:ch5concat}
+\end{center}
+
+In the toy we set $W_O$ to the identity matrix, so you can see head 1's note in the first two numbers and head
+2's in the last two. A trained $W_O$ mixes them, so that what one head found can be combined with what the other
+found.
+
+\Why Concatenation keeps the heads' answers apart, which was the point of \S5.1. $W_O$ then brings them back
+into the shared $d$-dimensional space every later step uses.
+
+\Summary{Head outputs are placed side by side and mixed back to width $d$ by one learned matrix.}
+
+%---------------------------------------------------------------------
+\subsection*{5.4\quad The MLP: each token thinks alone}
+
+After attention, \tok{time} has heard from \tok{waste} and \tok{of}. What does it do with what it heard?
+
+\Predict Before reading on, tell me: should this next step look at the other tokens again, or work on each
+token alone? Why?
+
+\Picture After a meeting, each person goes back to their own desk with their notes and checks them against a
+personal list of patterns: ``if I see this, then write that''. Nobody talks during this part.
+
+\Exactly The MLP (multi-layer perceptron, also called the feed-forward network) applies to every token's
+arrow separately:
+\[
+\operatorname{MLP}(\bm{h}) = \max(0,\ \bm{h}W_1 + \bm{b}_1)\,W_2
+\shape{(1\times d)(d\times d_{\text{ff}})(d_{\text{ff}}\times d)=1\times d}
+\]
+Read it as a list of $d_{\text{ff}}$ patterns. Column $j$ of $W_1$ is a \emph{key}: a direction to check for.
+The dot product of $\bm{h}$ with it, plus a threshold $b_j$, says how strongly the pattern is present. The
+function $\max(0,\cdot)$, called ReLU, lets a pattern \emph{fire} only above its threshold. Row $j$ of $W_2$ is
+the matching \emph{value}: what to write when the pattern fires. Geva and colleagues (2021) showed that trained
+MLPs behave very much like this key--value memory.
+
+Our toy has $d_{\text{ff}}=\nFiveDff$, four times $d$, as in the original transformer and GPT-2. To keep the
+arithmetic on paper, only three neurons are switched on; the other thirteen are all zeros.
+
+\begin{center}
+\small
+\begin{tabular}{@{}l l c l@{}}
+\toprule
+neuron & key (column of $W_1$) & threshold & value (row of $W_2$)\\
+\midrule
+1 & $\nFiveKeyOne$ & $\nFiveBiasOne$ & $\nFiveValOne$\\
+2 & $\nFiveKeyTwo$ & $\nFiveBiasTwo$ & $\nFiveValTwo$\\
+3 & $\nFiveKeyThree$ & $\nFiveBiasThree$ & $\nFiveValThree$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The MLP reads $\bm{h}_1$, the token's arrow after attention has been added in (\S5.5 explains the adding).
+For our three tokens it is
+\[
+H_1 = \begin{array}{r}\tok{waste}\\ \tok{of}\\ \tok{time}\end{array}\!\!\nFiveHone .
+\]
+Now follow the three steps of the formula in pictures. First, every row of $H_1$ is checked against every
+key (Figure~\ref{fig:ch5mlpone}).
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_mlpone.tex}}
+\captionof{figure}{Step 1, the checks. Each column of $W_1$ is one neuron's key. The outlined row of $H_1$ (\tok{time}) meets neuron 3's key and gives the dark cell. Only the three neurons that are switched on are drawn; the other thirteen columns are zeros.}
+\label{fig:ch5mlpone}
+\end{center}
+
+Second, add each neuron's threshold and let ReLU switch off everything negative
+(Figure~\ref{fig:ch5mlptwo}).
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_mlptwo.tex}}
+\captionof{figure}{Step 2, thresholds and ReLU. Top: the thresholds are added to every row. Bottom: every negative number becomes 0. What survives sits on the diagonal (dark cells): neuron 1 fires on \tok{waste}, neuron 2 on \tok{of}, neuron 3 on \tok{time}.}
+\label{fig:ch5mlptwo}
+\end{center}
+
+Third, each firing neuron writes its value, scaled by how strongly it fired (Figure~\ref{fig:ch5mlpthree}).
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_mlpthree.tex}}
+\captionof{figure}{Step 3, the values. The firing strengths times the rows of $W_2$. For \tok{time} only neuron 3 is non-zero, so its row of the output is $\nFiveNThreeTime$ times neuron 3's value.}
+\label{fig:ch5mlpthree}
+\end{center}
+
+For \tok{time}, the MLP writes $\operatorname{MLP}(\bm{h}_{1,\text{time}}) = \nFiveMtime$.
+Look at that value arrow: it mostly \emph{subtracts}. The arrow of \tok{time} is dominated by \tok{time}'s own
+coordinates 3 and 4; neuron 3 removes them, and what is left is mostly the part attention brought in from
+\tok{waste}. Writing by erasing is common: a pattern can say ``less of this'' as readily as ``more of that''.
+
+\begin{breaks}
+A checklist suggests each neuron has one clean meaning. In trained models, one neuron often responds to
+several unrelated patterns, and one pattern is often spread across many neurons. The key--value reading is a
+good first picture, not a complete one.
+\end{breaks}
+
+\Why Why work on each token alone? Attention has already done the talking: the arrow of \tok{time} now
+carries what \tok{waste} and \tok{of} said. Thinking per token is cheap and fully parallel, because every row
+is handled the same way at the same time. Why make the middle layer wider, $4d$? A wider middle means more
+patterns to check, so a wider middle layer holds more keys. Why ReLU? It is the simplest function that can switch a pattern off. GPT-2 uses a
+smooth cousin, GELU (Hendrycks and Gimpel, 2016), and Qwen uses a gated version, SwiGLU (Shazeer, 2020),
+which multiplies two keys' answers together; Chapter 10 shows it on the real model.
+
+\begin{wrongidea}{5.3}
+\emph{The MLP is where tokens exchange information.} It comes right after attention, and it holds most of the
+block's weights, so it is tempting to think it does the mixing. It does not: every row is processed alone.
+It does not need to look back at the other tokens, because attention already carried the other tokens' information into this token's arrow.
+\end{wrongidea}
+
+\begin{checkq}
+In the toy, change the arrow of \tok{waste} to anything you like, but leave $\bm{h}_{1}$ of \tok{time}
+unchanged. What happens to the MLP's output for \tok{time}?
+\begin{options}
+\item It changes, because the MLP reads all three tokens.
+\item It stays the same, because the MLP reads only the row it is working on.
+\item It becomes zero, because \tok{waste}'s neuron stops firing.
+\item It depends on the attention shares of \tok{waste}.
+\end{options}
+\end{checkq}
+
+\Summary{The MLP checks each token's arrow, on its own, against a list of learned patterns and writes what the
+firing patterns say.}
+
+%---------------------------------------------------------------------
+\subsection*{5.5\quad The residual stream: add, never overwrite}
+
+There is one more piece, and it is the simplest. After attention, we did not \emph{replace} the arrow of
+\tok{time} with $\bm{o}_{\text{time}}$. We \emph{added}:
+\[
+\bm{h}_1 = \bm{x} + \operatorname{Attn}(\bm{x}), \qquad \bm{h}_2 = \bm{h}_1 + \operatorname{MLP}(\bm{h}_1).
+\]
+
+\Picture A notebook is passed down a row of desks. Each desk reads the page and adds a note in the margin. No
+desk tears the page out. Whoever reads the notebook at the end sees the original text and every note.
+
+\Exactly For \tok{time}, the two additions are entry by entry (Figure~\ref{fig:ch5residual}).
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_residual.tex}}
+\captionof{figure}{The residual stream for \tok{time}. Top: the token's own arrow plus attention's note gives $\bm h_1$. Bottom: $\bm h_1$ plus the MLP's note gives $\bm h_2$. Nothing is replaced; each layer adds.}
+\label{fig:ch5residual}
+\end{center}
+
+For the whole sentence, $H_2=\nFiveHtwo$.
+
+The same block runs on every sentence of a batch at once, with the same weights. Figure~\ref{fig:ch5batch}
+stacks $H_1$ for our two customer replies, the $B\times T\times d$ block of Chapter 3, \S3.9.
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_batch.tex}}
+\captionof{figure}{$H_1$ for a batch of two sentences (rounded to one decimal). The front sheet is \tok{waste of time}; the sheet behind is \tok{not very useful}. Every number in both sheets was made by the same heads and the same $W_O$.}
+\label{fig:ch5batch}
+\end{center}
+
+
+Now read each row's guess for the next token, using the method Chapter 7 develops: compare the row with every
+token's arrow by dot product and pick the largest. Row 1 picks \tok{\nFivePredWaste}, row 2 picks
+\tok{\nFivePredOf}, row 3 picks \tok{\nFivePredTime} (score \nFiveLogitSorry, ahead of \tok{\nFiveTopTwoTime} at
+\nFiveTopTwoTimeLogit). One pass, three positions, three correct next tokens: the $B\times T$ predictions of
+\S1.9 on a real, if tiny, example.
+
+\Predict What happens if we remove the residual additions, so that $\bm{h}_1=\operatorname{Attn}(\bm{x})$ and
+$\bm{h}_2=\operatorname{MLP}(\bm{h}_1)$? Will the guesses survive?
+
+\Sanity They do not. Without the additions the three rows guess \nFiveNoResPreds. Without the MLP but with the
+additions, \tok{time} guesses \tok{\nFiveNoMlpPredTime}. Every piece is needed.
+
+\paragraph{Deeper stacks.} A real model repeats the block many times. To see what the additions do over depth,
+we stacked untrained blocks of a realistic shape ($d=\nFiveRbD$, \nFiveRbH\ heads, $d_{\text{ff}}=\nFiveRbDff$),
+fed \nFiveRbSeqs\ random sentences of \nFiveRbT\ tokens from a vocabulary of \nFiveRbV, and asked after each
+layer: can we still tell which token each position started as, by finding the nearest token arrow?
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=10cm, height=5cm, xlabel={layers stacked}, ylabel={\% positions that know their token},
+  ymin=-5, ymax=105, xmin=0, xmax=12, xtick={0,2,...,12}, axis lines*=left,
+  tick label style={font=\small}, label style={font=\small}, legend style={font=\small, at={(0.5,-0.32)}, anchor=north, draw=none}, legend columns=2]
+\addplot[thick, black, mark=*, mark size=1.4pt] table[x=L, y expr=100*\thisrow{res}] {data_ch5/identity.dat};
+\addplot[thick, black!65, dashed, mark=square*, mark size=1.4pt] table[x=L, y expr=100*\thisrow{nores}] {data_ch5/identity.dat};
+\legend{with residual additions, without residual additions}
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Untrained random blocks, fixed seed. With the additions, \nFiveIdResFour\% of positions still know their
+token after 4 layers and \nFiveIdResTwelve\% after 12. Without them, \nFiveIdNoResOne\% after one layer: chance
+level is \nFiveChance\%.}
+\end{center}
+
+Without the additions, one layer is enough to lose almost every token's identity: each layer overwrites the
+arrow instead of adding to it, so what the token was at the start is gone.
+
+\begin{breaks}
+A notebook is only written on, but the residual stream can also be \emph{corrected}: neuron 3 wrote negative
+numbers to cancel part of what was there. Think of margin notes that can say ``ignore the line above''.
+\end{breaks}
+
+\Why Adding keeps a straight path from the input to the output, so the original token and every layer's
+contribution stay readable at the end. Elhage and colleagues (2021) call this shared space the \emph{residual
+stream}: every layer reads from it and writes into it. The idea of adding a layer's input to its output comes
+from image networks, where He and colleagues (2016) used it to train networks with more than a hundred layers.
+
+\begin{wrongidea}{5.4}
+\emph{Each layer replaces a token's arrow with a new one.} Diagrams draw layers as boxes in a row, which
+suggests a relay where each runner drops what came before. The figure above shows what that would cost.
+Each layer \emph{adds} to the arrow instead.
+\end{wrongidea}
+
+\begin{checkq}
+In the toy, $\bm{x}_{\text{time}}=(0,0,1,1)$ and attention's output is $\nFiveO$. What is $\bm{h}_1$ for
+\tok{time}?
+\begin{options}
+\item $\nFiveO$, because attention replaces the arrow.
+\item $\nFiveHoneTime$, because the two are added.
+\item $(0,0,1,1)$, because attention only changes other tokens.
+\item The average of the two arrows.
+\end{options}
+\end{checkq}
+
+\begin{principle}{add, do not overwrite}
+Systems that must stay correct over many steps keep the original and append changes: a bank keeps every
+transaction rather than only the balance; a version-control history keeps every commit. An agent's memory
+layer that rewrites a stored memory in place loses the evidence of what was first said; one that keeps the raw
+episode and adds annotations can always be checked and corrected later. The residual stream makes the same
+choice inside the model.
+\end{principle}
+
+\Summary{Every layer adds its contribution to the token's arrow, so the original and every layer's notes stay
+readable all the way to the top.}
+
+%---------------------------------------------------------------------
+\subsection*{5.6\quad The whole block, and where its weights live}
+
+Putting it together, one block (still without the normalisation of Chapter 6) is
+\[
+\bm{h}_1 = \bm{x} + \big[\operatorname{head}_1(\bm{x})\ \ \operatorname{head}_2(\bm{x})\big]W_O,\qquad
+\bm{h}_2 = \bm{h}_1 + \max(0,\ \bm{h}_1W_1+\bm{b}_1)\,W_2 .
+\]
+Count the weights. Attention holds four $d\times d$ matrices' worth ($W_Q$, $W_K$, $W_V$ split across the heads,
+plus $W_O$): $4d^2$. The MLP holds $d\times4d$ plus $4d\times d$: $8d^2$. So about two thirds of a block's
+weights sit in the MLP. In the toy: \nFiveParamsAttn\ in attention and \nFiveParamsMlp\ in the MLP (including
+its 16 thresholds).
+
+\Summary{A block is talk (heads), think (MLP) and add (residual), and most of its weights are in the thinking.}
+
+\begin{lookingback}
+(1) In Chapter 3, why was it $QK^\top$ and not $QK$? (2) In Chapter 4, which of $\bm{q}$, $\bm{k}$, $\bm{v}$
+does RoPE rotate, and which does it leave alone? (3) In Chapter 1, how many next-token predictions does one pass
+make for a batch of $B$ sentences of $T$ tokens?
+\end{lookingback}
+
+\begin{exercise}
+Compute head 2's shares and output for the token \tok{of} (row 2). Explain the shares using the query alone.
+\end{exercise}
+\begin{exercise}
+GPT-2 small has $d=\nFiveGptD$ and $d_{\text{ff}}=\nFiveGptDff$. Ignoring biases, how many weights are in one
+block's attention, in its MLP, and in total?
+\end{exercise}
+\begin{exercise}
+Using $H_1$ from \S5.4, design a fourth neuron (a key with entries from $\{-1,0,1\}$ and a threshold) that fires
+on \tok{of} and on no other row. Is it unique?
+\end{exercise}
+\begin{exercise}
+In your own words, explain to someone who has never seen a transformer why stacking twelve blocks without the
+residual additions would fail, using the figure in \S5.5.
+\end{exercise}
+
+\subsection*{Answers to Chapter 5}
+\small
+\textbf{Check yourself 5.1.} (b). The output is one weighted average; different pairs of messages can give the
+same average (\S5.1). (a) is M5.2: one head cannot keep two messages apart. (c) goes too far: the average is
+still information. (d) is wrong: \tok{time}'s own share here is 0.
+
+\textbf{Check yourself 5.2.} (b). $64/8=8$ numbers per head, and 8 separate softmaxes instead of 2. (a) is
+backwards. (c) is wrong: the total size of $W_Q$, $W_K$, $W_V$, $W_O$ stays $4d^2$. (d) is M5.1.
+
+\textbf{Check yourself 5.3.} (b). The MLP reads one row at a time. (a) and (d) are M5.3: the other tokens reach
+\tok{time} only through attention, which happened before. (c) mixes up two rows: neuron 1 firing on \tok{waste}
+does not affect \tok{time}'s row.
+
+\textbf{Check yourself 5.4.} (b). The residual addition: $(0,0,1,1)+\nFiveO$. (a) is M5.4. (c) is wrong:
+attention writes into every token's arrow, including \tok{time}'s. (d) halves both, which no step does.
+
+\textbf{Answer 5.2 (head 2, your turn).} $\bm{q}^{(2)}_{\text{time}}=\nFiveQtwo$. The keys are the
+columns of $K^{(2)\top}$ below, one per token; only \tok{of}'s is non-zero. Query against keys:
+
+\begin{center}
+\fitwidthFourFive{\input{fig_ch5_headtwoanswer.tex}}
+\end{center}
+
+\noindent Raw scores $\nFiveStwo$; scaled $\nFiveStwoScaled$; shares
+$(\nFiveAtwoWaste, \nFiveAtwoOf, \nFiveAtwoTime)$.
+
+\textbf{Looking back.} (1) $Q$ and $K$ are both $T\times d_k$; only $QK^\top$ pairs each query row with each key
+row. (2) RoPE rotates queries and keys; values are left alone. (3) $B\times T$.
+
+\textbf{Exercise 5.1.} $\bm{q}^{(2)}_{\text{of}}=\nFiveQtwoOf$: a query of all zeros scores every key 0, so the
+shares are $\nFiveAtwoOfRow$ over \tok{waste} and \tok{of}, and the output is $\nFiveOtwoOfRow$. An empty question
+gives the plain average, as in Chapter 3.
+
+\textbf{Exercise 5.2.} Attention $4d^2=\nFiveGptAttn$; MLP $2\times d\times d_{\text{ff}}=\nFiveGptMlp$; total
+\nFiveGptBlock. Chapter 10 checks this against the real model, biases and norms included.
+
+\textbf{Exercise 5.3.} Neuron 2, key $(0,1,0,0)$ with threshold $-1$, already works: it gives $\nFiveNTwoOf$ on \tok{of}
+and nothing elsewhere. Others work too, for example $(-1,1,0,0)$ with threshold $0$. It is not unique: many keys
+separate the rows, which is one reason trained neurons are hard to name.
+
+\textbf{Exercise 5.4.} Without the additions, each layer's output is all that reaches the next layer. After one
+untrained layer only \nFiveIdNoResOne\% of positions can still be matched to their starting token, roughly chance;
+with the additions, the original arrow travels up unchanged and later layers add to it.
+\normalsize
+
+\subsection*{What you now know}
+\begin{itemize}
+\item Why one head returns one blend, and why several narrower heads can ask several questions at the same cost.
+\item How head outputs are concatenated and mixed by $W_O$.
+\item How the MLP works on each token alone, as keys (patterns), thresholds and values.
+\item Why every layer adds to the residual stream instead of replacing it, with measured numbers.
+\item How one toy block predicts \tok{of}, \tok{time} and \tok{Sorry} at the three positions in a single pass.
+\end{itemize}

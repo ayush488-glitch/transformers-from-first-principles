@@ -1,0 +1,90 @@
+[
+ {
+  "id": "3.1",
+  "wrong": "A token can use its own vector to predict the next word; mixing in other tokens is optional.",
+  "tempting": "The vector already encodes the word's meaning.",
+  "fixed_in": "\\S3.1",
+  "week": 9,
+  "quote": "why we cannot just use u3 which means normalized and learn to predict next tokens?"
+ },
+ {
+  "id": "3.2",
+  "wrong": "Attention scores are already percentages.",
+  "tempting": "They come out as a list of numbers per token, like a share table.",
+  "fixed_in": "\\S3.6 Step 4, \\S3.7",
+  "week": 9,
+  "quote": "is it really saying some sort of percentages?"
+ },
+ {
+  "id": "3.3",
+  "wrong": "Dividing by $\\sqrt{d_k}$ normalises the vectors to length 1.",
+  "tempting": "Cosine similarity divides by the lengths, and the formula looks similar.",
+  "fixed_in": "\\S3.8",
+  "week": 9,
+  "quote": "why do we divide by the total length? yeah, we want to get it back to normalized vector."
+ },
+ {
+  "id": "3.4",
+  "wrong": "Query, key and value are three copies of the same thing; one vector would do.",
+  "tempting": "All three are made from the same token vector.",
+  "fixed_in": "\\S3.3, \\S3.5",
+  "week": 9,
+  "quote": "why can't we just assign one recipe instead of creating another 64 uh recipes?"
+ },
+ {
+  "id": "3.5",
+  "wrong": "The current token only needs a query; keys and values are for the other tokens.",
+  "tempting": "The current token is the one asking.",
+  "fixed_in": "\\S3.6 (\\tok{time} gives 24.5\\% to itself)",
+  "week": 9,
+  "quote": "why does team time need keys and values?"
+ },
+ {
+  "id": "3.6",
+  "wrong": "Values are the words' original meanings.",
+  "tempting": "Values are made from the embeddings.",
+  "fixed_in": "\\S3.5",
+  "week": 9,
+  "quote": "does it make sense to look at the values of the original representation"
+ },
+ {
+  "id": "3.7",
+  "wrong": "The mask exists only to stop cheating.",
+  "tempting": "That is how it is usually introduced.",
+  "fixed_in": "\\S3.6 Step 3, \\S3.9 (it is what allows $T$ predictions per pass)",
+  "week": 9,
+  "quote": "it might copy from the future tokens."
+ },
+ {
+  "id": "3.8",
+  "wrong": "A bigger dot product always means more similar.",
+  "tempting": "Dot product is introduced as a similarity score.",
+  "fixed_in": "\\S3.2, \\S3.7 (length is a second knob)",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "3.9",
+  "wrong": "The transpose changes the vectors.",
+  "tempting": "The matrix looks different after it.",
+  "fixed_in": "\\S3.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "3.10",
+  "wrong": "Attention already knows the order of the words.",
+  "tempting": "Masking is about order, so order must be handled.",
+  "fixed_in": "\\S3.11",
+  "week": 9,
+  "quote": "any of this transformation does not take that"
+ },
+ {
+  "id": "3.11",
+  "wrong": "Softmax shares depend on the ratios between scores, as when dividing by the total.",
+  "tempting": "That is how percentages are usually made.",
+  "fixed_in": "\\S3.7 property (ii)",
+  "week": null,
+  "quote": null
+ }
+]

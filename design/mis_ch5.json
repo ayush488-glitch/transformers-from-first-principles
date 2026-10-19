@@ -1,0 +1,42 @@
+[
+ {
+  "id": "5.1",
+  "wrong": "More heads is always better.",
+  "tempting": "More heads sounds like more ways of looking.",
+  "fixed_in": "\\S5.2",
+  "week": 9,
+  "quote": "it is not always it helps."
+ },
+ {
+  "id": "5.2",
+  "wrong": "One head can attend to two tokens just as well, by splitting its attention.",
+  "tempting": "Softmax can give 50\\% to each.",
+  "fixed_in": "\\S5.1",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "5.3",
+  "wrong": "The MLP is where tokens exchange information.",
+  "tempting": "It comes right after attention and is the bigger part of the block.",
+  "fixed_in": "\\S5.4",
+  "week": 9,
+  "quote": "why doesn't your ffn looks back to other tokens?"
+ },
+ {
+  "id": "5.4",
+  "wrong": "Each layer replaces a token's arrow with a new one.",
+  "tempting": "Diagrams draw layers as boxes in a row.",
+  "fixed_in": "\\S5.5",
+  "week": 9,
+  "quote": "it forgots the original in representation without combining the effects of it"
+ },
+ {
+  "id": "5.5",
+  "wrong": "Each head has a fixed job, like ``the grammar head''.",
+  "tempting": "Our toy heads have tidy jobs.",
+  "fixed_in": "\\S5.2",
+  "week": null,
+  "quote": null
+ }
+]

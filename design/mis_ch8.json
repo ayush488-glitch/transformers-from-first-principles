@@ -1,0 +1,66 @@
+[
+ {
+  "id": "8.1",
+  "wrong": "The loss is the share of wrong answers, like a test score.",
+  "tempting": "Every exam you have taken was scored that way.",
+  "fixed_in": "\\S8.1",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "8.2",
+  "wrong": "For text, the error is the prediction minus the answer, as for a price.",
+  "tempting": "Earlier models (house prices, churn scores) were trained exactly that way.",
+  "fixed_in": "\\S8.1",
+  "week": 9,
+  "quote": "you are subtracting yhat minus y and then you are getting a score"
+ },
+ {
+  "id": "8.3",
+  "wrong": "A bigger step size always learns faster.",
+  "tempting": "Bigger steps cover more ground per step.",
+  "fixed_in": "\\S8.3",
+  "week": 3,
+  "quote": "but my loss started to increase over the bit of a time."
+ },
+ {
+  "id": "8.4",
+  "wrong": "Training adjusts the arrow of each word inside each sentence directly.",
+  "tempting": "Chapter 3 drew the arrows, so it feels as if they are what moves.",
+  "fixed_in": "\\S8.4",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "8.5",
+  "wrong": "A sentence gives the model one exercise: predict the word after it.",
+  "tempting": "We generate one token at a time.",
+  "fixed_in": "\\S8.6",
+  "week": 9,
+  "quote": "because we are predicting one token at a time, right?"
+ },
+ {
+  "id": "8.6",
+  "wrong": "Each step on a batch moves exactly downhill on the whole dataset.",
+  "tempting": "The step is computed, so it must be exact.",
+  "fixed_in": "\\S8.5",
+  "week": null,
+  "quote": null
+ },
+ {
+  "id": "8.7",
+  "wrong": "Training finds the best possible weights.",
+  "tempting": "The bowl picture has one bottom.",
+  "fixed_in": "\\S8.3",
+  "week": 9,
+  "quote": "to reach your local global minima"
+ },
+ {
+  "id": "8.8",
+  "wrong": "A low training loss means the model learned what we wanted.",
+  "tempting": "Lower loss is the goal we set.",
+  "fixed_in": "\\S8.4, 8.7",
+  "week": 9,
+  "quote": "it will overfit. you need to have a substantial training data with consistent patterns into it"
+ }
+]
